@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style type="text/css">
+    #toolbar-glacier { z-index: 1; position: fixed; top: 20px; left: 20px; }
+    #toolbar-year { z-index: 1; position: fixed; top: 20px; left: 200px; }
+    #toggle-imagery { z-index: 1; position: fixed; top: 23px; left: 410px; width: 100px; height: 25px; }
+    #toolbar-button { z-index: 1; position: fixed; top: 250px; left: 20px; }
+    .cesium-infoBox {
+      width: 300px; /* Adjust the width as needed */
+      height: 80%; /* Adjust the height as needed */
+      margin: 10px 10px 0px 0px;
+    }
+    /* Container for dropdown, positioned fixed at the bottom-left corner */
+/* Container for dropdown, positioned fixed at the bottom-left corner */
+.dropdown {
+    position: fixed;
+    top: 20px; /* Adjust as needed */
+    left: 60%;   /* Adjust as needed */
+    display: inline-block;
+    z-index: 1000; /* Set a high z-index value */
+    background-color: #2e2e2e; /* Dark gray background for the button */
+    color: white; /* White text color */
+    border-radius: 4px; /* Rounded corners */
+    padding: 5px; /* Padding around the text */
+}
+
+/* The actual dropdown content, hidden initially */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 200px;
+    box-shadow: 0 8px 16px 0 #2e2e2e;
+    z-index: 1000; /* Ensure this is also high to appear above the viewer */
+}
+
+/* Style for the label and checkbox within the dropdown */
+.dropdown-content label {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Show the dropdown content when hovering over the dropdown container */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown:hover {
+    background-color: #5586b7; /* Change to red on hover */
+    cursor: pointer; /* Change cursor to pointer on hover */
+}
+
+/* Add this CSS to change label color on hover */
+.dropdown:hover .dropdown-content label {
+    color: black; /* Change label text color to white on hover */
+}
+    
+  </style>
+</head>
+<body>
+  <div class="dropdown">
+    <span class="dropbtn">Layers Visibility</span>
+    <div class="dropdown-content" id="layerControls">
+        <label><input type="checkbox" id="InitialGeoJSON"> PATAGONIAN</label>
+    </div>
+</div>
+
+
+  <div id="toolbar-button"></div>
+  <div id="cesiumContainer" style="width: 100%; height: 100%;"></div>
+  <div id="toolbar-glacier">
+    <select class="cesium-button" id="dropdown-glacier">
+      <!-- Options will be dynamically added here -->
+    </select>
+  </div>
+  <div id="toolbar-year">
+    <select class="cesium-button" id="dropdow-year">
+        <option disabled selected>Select Summer Period</option>
+        <option value="0">2018 - 2019</option>
+        <option value="1">2019 - 2020</option>
+        <option value="2">2020 - 2021</option>
+        <option value="3">2021 - 2022</option>
+        <option value="4">2022 - 2023</option>
+    </select>
+    </div>
+    <button id="toggle-imagery">Add Imagery</button>
+    
+
+  <script type="module">
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhNWIwYTJmNC02ZWI2LTRhMjEtYTAwOC0yYzFiMTI3Zjk2YjciLCJpZCI6MTg5ODE0LCJpYXQiOjE3MDUzMTg4MjB9.G7uMRy1yiKRraTdIvk2HPZptxhSfB-tsDegfvaIOA9I';
+    let geoJsonDataSource;
+    let lastSelectedEntity = null;
+    const viewer = new Cesium.Viewer("cesiumContainer", {
+    terrain: Cesium.Terrain.fromWorldTerrain(),
+    animation: false,
+    });
+    const dropdownGlacier = document.getElementById('dropdown-glacier');
+    const dropdownYear = document.getElementById('dropdow-year');
+    
+    async function loadGeoJson() {
+      const resource = await Cesium.IonResource.fromAssetId(2423510);
+      geoJsonDataSource = await Cesium.GeoJsonDataSource.load(resource, {
+        clampToGround: true,
+        fill: Cesium.Color.BLACK.withAlpha(0.5),
+      });
+      var initialGeoJSONCheckbox = document.querySelector('#InitialGeoJSON');
+    if (geoJsonDataSource) {
+        initialGeoJSONCheckbox.checked = true; // Set the checkbox as checked by default
+        geoJsonDataSource.show = true; // Ensure the GeoJSON layer is also shown
+    }
+      viewer.dataSources.add(geoJsonDataSource);
+      viewer.flyTo(geoJsonDataSource);
+
+      let placeholderOption = document.createElement('option');
+      placeholderOption.textContent = 'Select Glacier';
+      placeholderOption.disabled = true;
+      placeholderOption.selected = true;
+      dropdownGlacier.appendChild(placeholderOption);
+      
+      // Populate dropdown with feature names
+      geoJsonDataSource.entities.values.forEach((entity) => {
+        if (entity.name) {
+          let option = document.createElement('option');
+          option.textContent = entity.name;
+          option.value = entity.name;
+          dropdownGlacier.appendChild(option);
+        }
+      });
+    }
+
+    loadGeoJson();
+
+    let selectedName;
+    let glaciersWithImagery = new Set();  // Set to store names of glaciers with imagery
+
+ // Event listener for dropdown selection change
+dropdownGlacier.addEventListener('change', function() {
+    selectedName = this.value;
+    const selectedEntity = geoJsonDataSource.entities.values.find(entity => entity.name === selectedName);
+
+    if (lastSelectedEntity) {
+        lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.5); // Set to 50% transparency
+    }
+
+    if (selectedEntity) {
+        // Check if the glacier has associated imagery
+        selectedEntity.polygon.material = glaciersWithImagery.has(selectedName) ? Cesium.Color.BLACK.withAlpha(0) : Cesium.Color.YELLOW.withAlpha(0.5);
+
+        viewer.flyTo(selectedEntity).then(function() {
+            setDescription(selectedEntity);
+        });
+
+        lastSelectedEntity = selectedEntity;
+    }
+});
+
+// Screen space event handler for detecting clicks on entities
+const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+clickHandler.setInputAction(function(click) {
+    const pickedObject = viewer.scene.pick(click.position);
+    if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id)) {
+        const pickedEntity = pickedObject.id;
+
+        if (pickedEntity.name === selectedName) {
+            // If the clicked entity is the currently selected glacier, display its description
+            setDescription(pickedEntity);
+        }
+    }
+}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+// Function to set description for a selected entity
+function setDescription(selectedEntity) {
+    if (selectedEntity.name === 'BENITO') {
+        selectedEntity.description = 
+        '<h1>Benito Glacier</h1>\
+         <img width="100%" height="100" style="float:left; margin: 0 1em 1em 0;"\
+         src="https://www.shutterstock.com/image-photo/photo-colombian-flag-on-pole-600nw-2305420559.jpg"\
+         alt="Benito Glacier"/>';
+    } else if (selectedEntity.name === 'STEFFEN') {
+        selectedEntity.description = 
+        '<h1>Steffen Glacier</h1>\
+         <img width="100%" height="100" style="float:left; margin: 0 1em 1em 0;"\
+         src="https://www.shutterstock.com/image-photo/photo-colombian-flag-on-pole-600nw-2305420559.jpg"\
+         alt="Steffen Glacier"/>';
+    }
+
+    viewer.selectedEntity = selectedEntity; // Explicitly set the selected entity
+}
+
+
+        let selectedYear
+        // Event listener for dropdown selection change
+        dropdownYear.addEventListener('change', function() {
+        selectedYear = this.options[this.selectedIndex].text;
+        });
+
+        viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
+        var pickedFeature = viewer.scene.pick(movement.position);
+        
+        if (Cesium.defined(pickedFeature)) {
+            console.log(pickedFeature.id.name);
+        }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        
+        
+        let addedImageryLayers = {}; // Object to store added imagery layers
+
+        // Append the checkbox to the dropdown content
+        var layerControls = document.getElementById('layerControls');
+
+    // Define the Asset ID Mappings
+    const assetIdMappings = {
+        "BENITO-2018 - 2019": 2424680,
+        "STEFFEN-2022 - 2023": 2426382,
+        "BENITO-2022 - 2023": 2427454
+        // Add more mappings here as needed
+    };
+
+
+// Function to rearrange layers so that the last added layer is at the bottom
+function rearrangeLayers() {
+  const layers = viewer.imageryLayers;
+  let layerArray = [];
+  
+  // Remove all layers and store them in an array
+  while(layers.length > 0) {
+    layerArray.push(layers.remove(layers.get(0), false)); // false to prevent destruction
+  }
+  
+  // Sort layerArray based on some criteria, e.g., by name, or maintain the order in which they were added
+  // Assume layerArray is now sorted in the desired order
+
+  // Add layers back in the desired order
+  layerArray.forEach(layer => {
+    layers.add(layer);
+  });
+}
+
+
+
+document.querySelector('#toggle-imagery').onclick = async function() {
+    let layerKey = selectedName + "-" + selectedYear; // Key for storing layer
+
+    // Check if the layerKey exists in the mappings
+    if (assetIdMappings.hasOwnProperty(layerKey)) { 
+        
+        if (lastSelectedEntity) {
+            lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.0);
+        }
+
+        let layerLabel = document.getElementById(layerKey + 'Label');
+        let imageryLayer = addedImageryLayers[layerKey];
+
+        if (!imageryLayer) {
+            try {
+                // Get the asset ID from the mappings
+                let assetId = assetIdMappings[layerKey];
+                const imageryProvider = await Cesium.IonImageryProvider.fromAssetId(assetId);
+                imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider);
+                imageryLayer.alpha = 0.5;
+
+                addedImageryLayers[layerKey] = imageryLayer;
+
+                // Create a new label for the layer if it doesn't exist
+                layerLabel = document.createElement('label');
+                layerLabel.id = layerKey + 'Label';
+
+                var layerToggleCheckbox = document.createElement('input');
+                layerToggleCheckbox.type = 'checkbox';
+                layerToggleCheckbox.checked = true;
+                layerToggleCheckbox.id = layerKey + 'Checkbox';
+
+                var transparencySlider = document.createElement('input');
+                transparencySlider.type = 'range';
+                transparencySlider.min = 0;
+                transparencySlider.max = 1;
+                transparencySlider.step = 0.1;
+                transparencySlider.value = imageryLayer.alpha; // Set to the current alpha value
+                transparencySlider.id = layerKey + 'Slider';
+
+                layerToggleCheckbox.onchange = function() {
+                    addedImageryLayers[layerKey].show = this.checked;
+                };
+
+                transparencySlider.oninput = function() {
+                    addedImageryLayers[layerKey].alpha = this.value;
+                };
+
+                layerLabel.appendChild(layerToggleCheckbox);
+                layerLabel.appendChild(document.createTextNode(selectedName + " " + selectedYear));
+                layerLabel.appendChild(transparencySlider);
+
+                // Insert the new layer label at the beginning of the layerControls
+                if (layerControls.firstChild) {
+                    layerControls.insertBefore(layerLabel, layerControls.firstChild);
+                } else {
+                    layerControls.appendChild(layerLabel);
+                }
+
+                // Add the glacier name to the set when imagery is successfully added
+                glaciersWithImagery.add(selectedName);
+
+            } catch (error) {
+                console.error("Error adding imagery layer:", error);
+            }
+        } else {
+            console.log("Imagery layer already added for:", layerKey);
+            // Update the checkbox and slider for the existing layer
+            let existingCheckbox = document.getElementById(layerKey + 'Checkbox');
+            let existingSlider = document.getElementById(layerKey + 'Slider');
+
+            existingCheckbox.checked = imageryLayer.show;
+            existingSlider.value = imageryLayer.alpha;
+
+            // Move the existing layerLabel to the top if it isn't already
+            if (layerControls.firstChild !== layerLabel) {
+                layerControls.removeChild(layerLabel);
+                layerControls.insertBefore(layerLabel, layerControls.firstChild);
+            }
+        }
+    } else {
+        console.log("Conditions not met. Selected name is:", selectedName, "and selected year is:", selectedYear);
+    }
+};
+      
+        //Event Listener to change th visibility of the initial GEOJSON
+        document.querySelector('#InitialGeoJSON').addEventListener('change', function() {
+            if (geoJsonDataSource) {
+                geoJsonDataSource.show = this.checked; // Toggle visibility of the GeoJSON layer
+            }
+        });
+   
+  </script>
+</body>
+</html>
