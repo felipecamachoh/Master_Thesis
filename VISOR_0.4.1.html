@@ -189,7 +189,7 @@ html, body {
 
  /* Ensure the InfoBox takes up as much space as needed */
  .cesium-infoBox-iframe {
-    height:auto;
+    height:600px !important;
     
 }
 
@@ -458,7 +458,6 @@ preloadImages([
 
     // Call the function to load GeoJSON data
     loadGeoJson();
-
 
     let selectedName;  // Name of the selected glacier
     let glaciersWithImagery = new Set();  // Set to store names of glaciers with imagery
