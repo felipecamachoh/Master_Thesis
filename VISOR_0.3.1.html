@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  
+  <style type="text/css">
+    /* Toolbars and Buttons */
+    #toolbar-imagery { z-index: 1000; position: fixed; top: 60px; left: 200px; }
+    #toolbar-glacier { z-index: 1000; position: fixed; top: 20px; left: 20px; }
+    #toolbar-year { z-index: 1000; position: fixed; top: 20px; left: 200px; }
+    #toggle-imagery, #toggle-swipe { 
+        z-index: 1000; 
+        position: fixed; 
+        top: 23px; 
+        left: 410px; 
+        width: 100px; 
+        height: 25px; 
+    }
+    #toggle-swipe { top: 53px; }
+    #toolbar-button { z-index: 1; position: fixed; top: 250px; left: 20px; }
+
+    /* Dropdown Menus */
+    .dropdown {
+        position: fixed;
+        top: 20px;
+        left: 60%;
+        display: inline-block;
+        z-index: 1000;
+        background-color: #2e2e2e;
+        color: white;
+        border-radius: 4px;
+        padding: 5px;
+    }
+    .dropdown:hover { background-color: #5586b7; cursor: pointer; }
+
+    /* Dropdown Content */
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 200px;
+        box-shadow: 0 8px 16px 0 #2e2e2e;
+        z-index: 1000;
+    }
+    .dropdown-content label {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+    .dropdown:hover .dropdown-content { display: block; }
+    .dropdown:hover .dropdown-content label { color: black; }
+
+    /* Layer Controls */
+    #layerControls2 {
+        top: 20px;
+        left: 70%;
+        display: none;
+    }
+
+    /* Cesium InfoBox */
+    .cesium-infoBox {
+        width: 300px;
+        height: 80%;
+        margin: 10px 10px 0 0;
+    }
+
+    /* Legend Box */
+    #legend {
+        display: none;
+        position: absolute;
+        bottom: 15%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Legend Box */
+    #legend-LST {
+        display: none;
+        position: absolute;
+        bottom: 35%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend-LST span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend-LST .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Legend Box */
+    #legend-AIR {
+        display: none;
+        position: absolute;
+        bottom: 55%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend-AIR span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend-AIR .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Splash Screen */
+    #splashScreen {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        max-width: 90%;
+        height: 300px;
+        max-height: 90%;
+        overflow: auto;
+    }
+    #splashScreen button {
+        margin-top: 15px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    #splashScreen button:hover { background-color: #45a049; }
+
+    /* Cesium Container */
+    #cesiumContainer {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+</head>
+<body>
+
+<div id="cesiumContainer">
+    <!-- Toolbar for Glacier Selection -->
+    <div id="toolbar-glacier">
+        <select class="cesium-button" id="dropdown-glacier">
+            <!-- Options will be dynamically added here -->
+        </select>
+    </div>
+
+    <!-- Toolbar for Year Selection -->
+    <div id="toolbar-year">
+        <select class="cesium-button" id="dropdow-year">
+            <option disabled selected>Select Summer Period</option>
+            <option value="0">2018 - 2019</option>
+            <option value="1">2019 - 2020</option>
+            <option value="2">2020 - 2021</option>
+            <option value="3">2021 - 2022</option>
+            <option value="4">2022 - 2023</option>
+        </select>
+    </div>
+
+    <!-- Toolbar for Imagery Selection -->
+    <div id="toolbar-imagery">
+        <select class="cesium-button" id="dropdow-imagery">
+            <option disabled selected>Select Imagery Type</option>
+            <option value="0">Glacier Area</option>
+            <option value="1">LST</option>
+            <option value="2">Air Temperature</option>
+        </select>
+    </div>
+
+    <!-- Button to Enable Swipe -->
+    <button id="toggle-swipe">Enable Swipe</button>
+
+    <!-- Dropdown for Layer Control -->
+    <div class="dropdown">
+        <span class="dropbtn">Layers Visibility</span>
+        <div class="dropdown-content" id="layerControls">
+            <label><input type="checkbox" id="InitialGeoJSON"> PATAGONIAN</label>
+            <!-- More checkboxes added via JavaScript -->
+        </div>
+    </div>
+
+    <!-- Second Dropdown for Layer Control -->
+    <div class="dropdown" id="layerControls2">
+        <span class="dropbtn">Layers Visibility 2</span>
+        <div class="dropdown-content" id="layerscontrol2-dropdown">
+            <label><input type="checkbox" id="InitialGeoJSON"> PATAGONIAN</label>
+            <!-- More checkboxes added via JavaScript -->
+        </div>
+    </div>
+
+    <!-- Button to Add Imagery -->
+    <button id="toggle-imagery">Add Imagery</button>
+
+    <!-- Map Legend -->
+    <div id="legend"> 
+        <h3 style="margin: 0; text-align: center;">SNOW PRESENCE</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #66b2da;"></span>PRESENCE</span>
+            <span><span class="color-box" style="background-color: #B94536;"></span>ABSENCE</span>
+        </div>
+    </div>
+
+    <!-- LST Imagery Legend -->
+    <div id="legend-LST" style="display: none;"> 
+        <h3 style="margin: 0; text-align: center;">LST Information</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #ff0000;"></span>High</span>
+            <span><span class="color-box" style="background-color: #00ff00;"></span>Medium</span>
+            <span><span class="color-box" style="background-color: #0000ff;"></span>Low</span>
+        </div>
+    </div>
+
+    <!-- AIR TEMPERATURE Imagery Legend -->
+    <div id="legend-AIR" style="display: none;"> 
+        <h3 style="margin: 0; text-align: center;">AIR Information</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #ff0000;"></span>High</span>
+            <span><span class="color-box" style="background-color: #00ff00;"></span>Medium</span>
+            <span><span class="color-box" style="background-color: #0000ff;"></span>Low</span>
+        </div>
+    </div>
+
+
+    <!-- Splash Screen -->
+    <div id="splashScreen">
+        <h2>Welcome to the Glacier Viewer</h2>
+        <p>Instructions on how to use the app...</p>
+        <p><img src="your-image-url.jpg" alt="Instructions" /> </p>
+        <button onclick="document.getElementById('splashScreen').style.display='none'">Get Started</button>
+    </div>
+</div>
+  
+<script type="module">
+    // Initial Setup
+    let initialSplashScreenClosed = false;
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhNWIwYTJmNC02ZWI2LTRhMjEtYTAwOC0yYzFiMTI3Zjk2YjciLCJpZCI6MTg5ODE0LCJpYXQiOjE3MDUzMTg4MjB9.G7uMRy1yiKRraTdIvk2HPZptxhSfB-tsDegfvaIOA9I';
+    let geoJsonDataSource;
+    let lastSelectedEntity = null;
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        terrain: Cesium.Terrain.fromWorldTerrain(),
+        animation: false,
+        baseLayerPicker: false,
+        imageryProvider: false,
+    });
+
+    // Load default imagery layer
+    const layer = viewer.imageryLayers.addImageryProvider(
+        await Cesium.IonImageryProvider.fromAssetId(3845)
+    );
+
+    // Dropdowns for Glacier and Year selection
+    const dropdownGlacier = document.getElementById('dropdown-glacier');
+    const dropdownYear = document.getElementById('dropdow-year');
+    
+    /********************************************************************************
+     * Asynchronously loads GeoJSON data and updates the UI components.
+     * - Loads GeoJSON data from Cesium Ion.
+     * - Synchronizes checkboxes in different panels for GeoJSON layer visibility.
+     * - Populates the dropdown menu with glacier names from the GeoJSON data.
+     ********************************************************************************/
+    
+    async function loadGeoJson() {
+        // Load GeoJSON data from Cesium Ion
+        const resource = await Cesium.IonResource.fromAssetId(2423510);
+        geoJsonDataSource = await Cesium.GeoJsonDataSource.load(resource, {
+            clampToGround: true,
+            fill: Cesium.Color.BLACK.withAlpha(0.5),
+        });
+
+        // Check if the GeoJSON data source is successfully loaded
+        if (geoJsonDataSource) {
+            // Synchronize and set up GeoJSON visibility checkboxes
+            synchronizeCheckboxes();
+
+            // Add the loaded GeoJSON data source to the Cesium viewer
+            viewer.dataSources.add(geoJsonDataSource);
+
+            // Populate the glacier dropdown with names from GeoJSON entities
+            populateGlacierDropdown();
+        }
+    }
+
+    function createTransparencySlider(panelId, dataSource) {
+    var panel = document.getElementById(panelId);
+    var slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0;
+    slider.max = 1;
+    slider.step = 0.01;
+    slider.value = 0.5; // Default value, assuming the polygons are initially semi-transparent
+    slider.className = 'geojson-transparency-slider';
+    slider.oninput = function() {
+        var newAlpha = parseFloat(this.value);
+        dataSource.entities.values.forEach(function(entity) {
+            // Update the alpha component of the polygon material color
+            if (entity.polygon && entity.polygon.material && entity.polygon.material.color) {
+                var color = entity.polygon.material.color.getValue();
+                entity.polygon.material = new Cesium.Color(color.red, color.green, color.blue, newAlpha);
+            }
+        });
+    };
+
+    // Append the slider to the panel
+    panel.appendChild(slider);
+}
+
+    let initialGeoJSONCheckbox1;
+    let initialGeoJSONCheckbox2;
+    /**
+     * Synchronizes checkboxes for controlling the visibility of the GeoJSON layer.
+     */
+    function synchronizeCheckboxes() {
+        // Find the GeoJSON checkboxes in both panels
+        initialGeoJSONCheckbox1 = document.querySelector('#layerControls #InitialGeoJSON');
+        initialGeoJSONCheckbox2 = document.querySelector('#layerControls2 #InitialGeoJSON');
+
+        // Set both checkboxes as checked by default and ensure the GeoJSON layer is shown
+        initialGeoJSONCheckbox1.checked = initialGeoJSONCheckbox2.checked = geoJsonDataSource.show = true;
+
+        // Add change event listeners to both checkboxes for synchronization
+        initialGeoJSONCheckbox1.addEventListener('change', function() {
+            geoJsonDataSource.show = this.checked;
+            initialGeoJSONCheckbox2.checked = this.checked;
+        });
+
+        initialGeoJSONCheckbox2.addEventListener('change', function() {
+            geoJsonDataSource.show = this.checked;
+            initialGeoJSONCheckbox1.checked = this.checked;
+        });
+    }
+
+    
+
+    /**
+     * Populates the dropdown menu with glacier names from the GeoJSON data.
+     */
+    function populateGlacierDropdown() {
+        // Add a placeholder option to the dropdown
+        let placeholderOption = document.createElement('option');
+        placeholderOption.textContent = 'Select Glacier';
+        placeholderOption.disabled = true;
+        placeholderOption.selected = true;
+        dropdownGlacier.appendChild(placeholderOption);
+
+        // Add an option for each glacier entity in the GeoJSON data
+        geoJsonDataSource.entities.values.forEach((entity) => {
+            if (entity.name) {
+                let option = document.createElement('option');
+                option.textContent = entity.name;
+                option.value = entity.name;
+                dropdownGlacier.appendChild(option);
+            }
+        });
+    }
+
+    // Call the function to load GeoJSON data
+    loadGeoJson();
+
+
+    let selectedName;  // Name of the selected glacier
+    let glaciersWithImagery = new Set();  // Set to store names of glaciers with imagery
+
+    /********************************************************************************
+     * Dropdown Glacier Selection Event Listener
+     * - Listens for changes in the glacier selection dropdown.
+     * - Updates the selected glacier and manages entity appearance and descriptions.
+     ********************************************************************************/
+    dropdownGlacier.addEventListener('change', function() {
+        selectedName = this.value;
+        const selectedEntity = geoJsonDataSource.entities.values.find(entity => entity.name === selectedName);
+
+        if (lastSelectedEntity) {
+            // Reset the appearance of the previously selected entity
+            lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.5);
+        }
+
+        if (selectedEntity) {
+            updateEntityAppearance(selectedEntity);
+            flyToAndDescribeEntity(selectedEntity);
+            lastSelectedEntity = selectedEntity;
+        }
+    });
+
+    /********************************************************************************
+     * Function to Update Entity Appearance
+     * - Updates the color of the entity based on the presence of imagery.
+     ********************************************************************************/
+    function updateEntityAppearance(entity) {
+        if (glaciersWithImagery.has(entity.name)) {
+            entity.polygon.material = Cesium.Color.BLACK.withAlpha(0);
+        } else {
+            entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.5);
+        }
+    }
+
+    /********************************************************************************
+     * Function to Fly to an Entity and Describe It
+     * - Focuses the viewer on the selected entity and sets its description.
+     ********************************************************************************/
+    function flyToAndDescribeEntity(entity) {
+        viewer.flyTo(entity).then(function () {
+            setDescription(entity);
+        });
+    }
+
+    /********************************************************************************
+     * Function to Set the Description of an Entity
+     * - Assigns a unique HTML description to an entity based on its name.
+     ********************************************************************************/
+    function setDescription(entity) {
+        switch (entity.name) {
+            case 'BENITO':
+                // Unique description for Benito Glacier
+                entity.description = 
+                    '<h1>Benito Glacier</h1>\
+                    <p>Specific details about Benito Glacier...</p>\
+                    <img width="100%" height="100" style="float:left; margin: 0 1em 1em 0;"\
+                    src="URL_for_Benito_Glacier_Image" alt="Benito Glacier"/>';
+                break;
+            case 'STEFFEN':
+                // Unique description for Steffen Glacier
+                entity.description = 
+                    '<h1>Steffen Glacier</h1>\
+                    <p>Specific details about Steffen Glacier...</p>\
+                    <img width="100%" height="100" style="float:left; margin: 0 1em 1em 0;"\
+                    src="URL_for_Steffen_Glacier_Image" alt="Steffen Glacier"/>';
+                break;
+            // Add cases for other glaciers with their unique descriptions
+            default:
+                // Default action or description for entities not specifically handled
+                entity.description = "<p>No specific information available.</p>";
+                break;
+        }
+        viewer.selectedEntity = entity;  // Explicitly set the selected entity
+    }
+    /********************************************************************************
+     * Screen Space Event Handler for Clicks on Entities
+     * - Detects clicks on entities within the viewer.
+     * - Sets the description of the clicked entity if it matches the selected glacier.
+     ********************************************************************************/
+    const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    clickHandler.setInputAction(function(click) {
+        const pickedObject = viewer.scene.pick(click.position);
+        if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id)) {
+            const pickedEntity = pickedObject.id;
+            if (pickedEntity.name === selectedName) {
+                setDescription(pickedEntity);
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    
+    let selectedYear;  // Variable to store the selected year from the dropdown
+
+    /********************************************************************************
+     * Dropdown Year Selection Event Listener
+     * - Listens for changes in the year dropdown selection.
+     * - Updates the global `selectedYear` variable based on the user's choice.
+     ********************************************************************************/
+
+    dropdownYear.addEventListener('change', function() {
+        // Update `selectedYear` with the selected option's text
+        selectedYear = this.options[this.selectedIndex].text;
+    });
+
+    /********************************************************************************
+     * Viewer Screen Space Event Handler for Left Clicks
+     * - Sets an event listener for left mouse button clicks within the Cesium viewer.
+     * - Picks and logs the name of the clicked feature (if any) in the console.
+     * - This can be useful for debugging or for future feature implementation.
+     ********************************************************************************/
+
+    viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
+        // Pick the feature at the clicked position
+        var pickedFeature = viewer.scene.pick(movement.position);
+        
+        // Check if a feature was picked and log its name
+        if (Cesium.defined(pickedFeature)) {
+            console.log(pickedFeature.id.name);
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+                        
+    let addedImageryLayers = {}; // Object to store added imagery layers
+
+    /********************************************************************************
+     * UI Elements
+     ********************************************************************************/
+    var layerControls1 = document.getElementById('layerControls'); // First layers panel
+    var layerControls3 = document.getElementById('layerscontrol2-dropdown'); // Second layers panel
+
+    /********************************************************************************
+     * Toggle Imagery Event Handler
+     * - Handles the click event for the toggle imagery button.
+     * - Manages the addition of imagery layers based on selected glacier and year.
+     * - Updates UI elements accordingly.
+     ********************************************************************************/
+     document.querySelector('#toggle-imagery').onclick = async function() {
+        const selectedImageryType = document.getElementById('dropdow-imagery').options[document.getElementById('dropdow-imagery').selectedIndex].text; // Get the selected imagery type's name
+        let layerKey = `${selectedName}-${selectedYear}-${selectedImageryType}`; // Use imagery type's name in the layer key
+        let assetId = getAssetId(selectedName, selectedYear, selectedImageryType); // Pass the imagery type's name to getAssetId
+
+        if (assetId) {
+            // The rest of your logic remains the same
+            resetLastSelectedEntityAppearance();
+
+            if (!addedImageryLayers[layerKey]) {
+                try {
+                    const selectedImageryType = document.getElementById('dropdow-imagery').options[document.getElementById('dropdow-imagery').selectedIndex].text;
+                    const imageryProvider = await Cesium.IonImageryProvider.fromAssetId(assetId);
+                    let imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider);
+                    imageryLayer.alpha = 0.5;
+
+                    addedImageryLayers[layerKey] = imageryLayer;
+                    appendCheckboxToPanels(layerKey);
+
+                    // Add the glacier name to the set when imagery is successfully added
+                    glaciersWithImagery.add(selectedName);
+                    updateUIOnImageryAddition(selectedImageryType);
+                    // Determine the split direction based on the checkbox state
+                    let checkboxInFirstPanel = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+                    if (isSwipeEnabled && checkboxInFirstPanel && checkboxInFirstPanel.checked) {
+                        imageryLayer.splitDirection = Cesium.SplitDirection.LEFT;
+                    } else {
+                        imageryLayer.splitDirection = Cesium.SplitDirection.RIGHT;
+                    }
+
+                    console.log("Conditions met, imagery added for:", layerKey);
+                } catch (error) {
+                    console.error("Error adding imagery layer:", error);
+                }
+            } else {
+                console.log("Imagery layer already added for:", layerKey);
+            }
+        } else {
+            console.log("Conditions not met. Selected name is:", selectedName, "and selected year is:", selectedYear, "and imagery type is:", selectedImageryType);
+        }
+    };
+
+
+
+    /********************************************************************************
+     * Helper Functions
+     ********************************************************************************/
+     function getAssetId(name, year, imageryType) {
+    // Define a mapping for each combination of glacier, year, and imagery type name
+    const assetMapping = {
+        'BENITO-2018 - 2019-Glacier Area': 2424680, // Example ID for Benito, 2018-2019, Glacier Area
+        'STEFFEN-2022 - 2023-Glacier Area': 2426382, 
+        'BENITO-2022 - 2023-Glacier Area': 2427454,
+        'BENITO-2018 - 2019-LST': 2450779, // Example ID for  LST
+        'BENITO-2018 - 2019-Air Temperature': 2450824, // Example ID for AIR TEMPRATURE
+        // Add more mappings for other combinations here
+    };
+    return assetMapping[`${name}-${year}-${imageryType}`];
+}
+
+
+
+    function resetLastSelectedEntityAppearance() {
+        if (lastSelectedEntity) {
+            lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.0);
+        }
+    }
+
+    function appendCheckboxToPanels(layerKey) {
+        appendCheckboxToPanel(layerKey, layerControls1, Cesium.SplitDirection.LEFT);
+        appendCheckboxToPanel(layerKey, layerControls3, Cesium.SplitDirection.RIGHT);
+    }
+
+    // Global flags to track if the legends have already been shown
+    let glacierAreaLegendShown = false;
+    let lstLegendShown = false; // New flag for LST legend
+    let airLegendShown = false;
+
+    function updateUIOnImageryAddition(selectedImageryType) {
+        // Check for "Glacier Area" imagery and display its legend if not already shown
+        if (selectedImageryType === "Glacier Area" && !glacierAreaLegendShown) {
+            document.getElementById('legend').style.display = 'block';
+            glacierAreaLegendShown = true;
+        }
+        // Check for "LST" imagery and display its legend if not already shown
+        if (selectedImageryType === "LST" && !lstLegendShown) {
+            document.getElementById('legend-LST').style.display = 'block';
+            lstLegendShown = true;
+        }
+
+            // Check for "AIR" imagery and display its legend if not already shown
+        else if (selectedImageryType === "Air Temperature" && !airLegendShown) {
+            document.getElementById('legend-AIR').style.display = 'block';
+            airLegendShown = true;
+        }
+    }
+
+    
+    // Sets to keep track of which layers are controlled by each panel
+    let layersControlledByPanel1 = new Set();
+    let layersControlledByPanel2 = new Set();
+
+    /********************************************************************************
+     * Function to Append a Checkbox to a Specified Panel
+     * - This function creates and appends a checkbox and a transparency slider for a given imagery layer to a specified UI panel.
+     * - It also sets up event handlers to manage the visibility and transparency of the imagery layer based on user interaction.
+     * @param {string} layerKey - The key identifying the layer.
+     * @param {HTMLElement} panel - The panel where the checkbox and slider will be appended.
+     * @param {Cesium.SplitDirection} splitDirection - Split direction used for setting up the imagery layer (not used in this function, but can be extended for future use).
+     ********************************************************************************/
+
+    function appendCheckboxToPanel(layerKey, panel, splitDirection) {
+        // Create a safe key for the layer to use in DOM elements (removing special characters and spaces)
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_');
+
+        // Create a label element to group the checkbox and slider
+        var label = document.createElement('label');
+        label.id = safeLayerKey + 'Label';
+
+        // Create and configure the layer toggle checkbox
+        var layerToggleCheckbox = document.createElement('input');
+        layerToggleCheckbox.type = 'checkbox';
+        layerToggleCheckbox.checked = true; // Default the checkbox to checked
+        layerToggleCheckbox.id = safeLayerKey + 'Checkbox';
+
+        // Create and configure the transparency slider for the layer
+        var transparencySlider = document.createElement('input');
+        transparencySlider.type = 'range';
+        transparencySlider.min = 0;
+        transparencySlider.max = 1;
+        transparencySlider.step = 0.1;
+        transparencySlider.value = addedImageryLayers[layerKey] ? addedImageryLayers[layerKey].alpha : 0.5; // Set initial slider value
+        transparencySlider.id = safeLayerKey + 'Slider';
+
+        // Event handler for checkbox change
+        layerToggleCheckbox.onchange = function() {
+            if (addedImageryLayers[layerKey]) {
+                addedImageryLayers[layerKey].show = this.checked; // Toggle layer visibility
+                syncCheckboxState(layerKey, this.checked, panel);  // Sync checkbox state across panels
+                updateLayerVisibility(); // Additional function to update layer visibility (if exists)
+            }
+        };
+
+        // Event handler for slider input
+        transparencySlider.oninput = function() {
+            if (addedImageryLayers[layerKey]) {
+                addedImageryLayers[layerKey].alpha = parseFloat(this.value); // Adjust layer transparency
+                syncSliderState(layerKey, this.value, panel);  // Sync slider state across panels
+            }
+        };
+
+        // Append the created elements to the label and then to the panel
+        label.appendChild(layerToggleCheckbox);
+        label.appendChild(document.createTextNode(layerKey)); // Adding the layer key as text next to the checkbox
+        label.appendChild(transparencySlider);
+        // Insert the new label at the beginning of the panel
+        if (panel.firstChild) {
+            panel.insertBefore(label, panel.firstChild);
+        } else {
+            panel.appendChild(label);
+        }
+
+        // Uncheck the checkbox in the second panel by default if swipe is enabled
+        if (isSwipeEnabled && panel.id === 'layerscontrol2-dropdown') {
+            layerToggleCheckbox.checked = false;
+        }
+    }
+    
+
+    /********************************************************************************
+     * Function to Synchronize Slider State Between Panels
+     * - This function ensures that the transparency sliders for a specific layer
+     *   in different control panels are synchronized.
+     * - When the slider value is changed in one panel, it updates the corresponding
+     *   slider in the other panel to reflect the same value.
+     * - This keeps the UI consistent and intuitive for the user.
+     * @param {string} layerKey - The key identifying the layer for which the sliders are synchronized.
+     * @param {number} value - The new value of the slider (transparency level).
+     * @param {HTMLElement} currentPanel - The panel where the slider value was changed.
+     ********************************************************************************/
+
+    function syncSliderState(layerKey, value, currentPanel) {
+        // Create a safe version of the layer key for use in DOM element IDs
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        // Query for the corresponding sliders in both control panels
+        var slider1 = document.querySelector(`#layerControls #${safeLayerKey}Slider`);
+        var slider2 = document.querySelector(`#layerscontrol2-dropdown #${safeLayerKey}Slider`);
+
+        // Synchronize the slider value in the other panel
+        if (currentPanel === layerControls1 && slider2) {
+            slider2.value = value; // Update slider in the second panel if the change was made in the first panel
+        } else if (currentPanel === layerControls3 && slider1) {
+            slider1.value = value; // Update slider in the first panel if the change was made in the second panel
+        }
+    }
+
+
+    /********************************************************************************
+     * Function to Synchronize Checkbox State Between Panels
+     * - This function ensures that the state of checkboxes (checked/unchecked) for a specific layer
+     *   is synchronized between different control panels.
+     * - When a checkbox is toggled in one panel, it updates the corresponding checkbox in the other panel.
+     * - This synchronization is essential for maintaining consistency in the user interface, ensuring that
+     *   the state of a layer's visibility is accurately represented in all control panels.
+     * @param {string} layerKey - The key identifying the layer for which the checkboxes are synchronized.
+     * @param {boolean} isChecked - The current checked state of the checkbox.
+     * @param {HTMLElement} currentPanel - The panel where the checkbox state was changed.
+     ********************************************************************************/
+    function syncCheckboxState(layerKey, isChecked, currentPanel) {
+        // Create a safe version of the layer key for use in DOM element IDs
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_'); 
+
+        // Query for the corresponding checkboxes in both control panels
+        var checkbox1 = document.querySelector(`#layerControls #${safeLayerKey}Checkbox`);
+        var checkbox2 = document.querySelector(`#layerscontrol2-dropdown #${safeLayerKey}Checkbox`);
+
+        // Synchronize the checkbox state in the other panel
+        if (currentPanel === layerControls1 && checkbox2) {
+            checkbox2.checked = !isChecked; // Invert the checked state in the second panel if the change was made in the first panel
+        } else if (currentPanel === layerControls3 && checkbox1) {
+            checkbox1.checked = !isChecked; // Invert the checked state in the first panel if the change was made in the second panel
+        }
+    }
+
+    /********************************************************************************
+     * Event Listener for Toggling the Visibility of the Initial GeoJSON Layer
+     * - This event listener is attached to a checkbox (or similar control) identified by the ID 'InitialGeoJSON'.
+     * - It manages the visibility of the GeoJSON layer in the Cesium viewer.
+     * - When the state of the checkbox changes (checked/unchecked), this event listener updates the 
+     *   visibility of the GeoJSON layer accordingly.
+     * - It ensures that the display of the GeoJSON layer on the map can be controlled interactively by the user.
+     ********************************************************************************/
+    document.querySelector('#InitialGeoJSON').addEventListener('change', function() {
+        // Check if the GeoJSON data source is available
+        if (geoJsonDataSource) {
+            // Toggle the visibility of the GeoJSON layer based on the checkbox's state
+            geoJsonDataSource.show = this.checked;
+        }
+    });
+
+
+    /********************************************************************************
+     * Swipe Functionality Variables
+     ********************************************************************************/
+    let isSwipeEnabled = false; // Flag to track if swipe is enabled
+    let swipeElement;           // DOM element for the swipe control
+
+    /********************************************************************************
+     * Function to Initialize Swipe Functionality
+     * - Creates a swipe element that allows users to interactively control the split view in the Cesium viewer.
+     * - Ensures that the swipe element is only created once and avoids re-creation if it already exists.
+     ********************************************************************************/
+    function initializeSwipe() {
+        // Check if swipeElement already exists to prevent re-initialization
+        if (swipeElement) {
+            return; // Exit the function if swipe is already initialized
+        }
+
+        // Create a new div element for the swipe functionality
+        swipeElement = document.createElement('div');
+        swipeElement.style.position = 'absolute';
+        swipeElement.style.left = (lastSwipePosition * 100) + '%';
+        viewer.scene.splitPosition = lastSwipePosition;
+        swipeElement.style.top = '0';
+        swipeElement.style.bottom = '0';
+        swipeElement.style.width = '5px'; // Width of the swipe bar
+        swipeElement.style.backgroundColor = '#d3d3d3'; // Color of the swipe bar
+        swipeElement.style.cursor = 'ew-resize'; // Cursor indicates resizable element
+        swipeElement.style.zIndex = '999'; // Ensure it appears above other viewer elements
+        document.body.appendChild(swipeElement); // Add the swipe element to the document
+
+        // Initialize variable to track the dragging state
+        let isDragging = false;
+
+        // Event listener for starting the drag
+        swipeElement.addEventListener('mousedown', function(e) {
+            isDragging = true; // Enable dragging
+            e.preventDefault(); // Prevent default behavior to enable smooth dragging
+        });
+
+        // Event listener for dragging the swipe element
+        window.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                // Calculate the new position based on the cursor's position
+                let viewerRect = viewer.container.getBoundingClientRect();
+                let position = (e.clientX - viewerRect.left) / viewerRect.width;
+                swipeElement.style.left = (position * 100) + '%'; // Update the position of the swipe bar
+                viewer.scene.splitPosition = position; // Update the split position in the Cesium viewer
+                lastSwipePosition = position;
+            }
+        });
+
+        // Event listener for releasing the drag
+        window.addEventListener('mouseup', function() {
+            isDragging = false; // Disable dragging
+        });
+    }
+
+
+    /********************************************************************************
+     * Function to Update Layer Visibility
+     * - Adjusts the visibility and split direction of layers based on the state of the checkboxes in both control panels.
+     * - Handles both the GeoJSON layer and other imagery layers.
+     ********************************************************************************/
+    function updateLayerVisibility() {
+        // Update GeoJSON Layer Visibility
+        if (geoJsonDataSource) {
+            const geoJsonCheckbox1 = document.querySelector('#layerControls #InitialGeoJSON');
+            const geoJsonCheckbox2 = document.querySelector('#layerscontrol2-dropdown #InitialGeoJSON');
+
+            // Check if swipe is enabled and set visibility accordingly
+            if (isSwipeEnabled) {
+                // If swipe is enabled, the GeoJSON layer is visible if either of the checkboxes is checked
+                geoJsonDataSource.show = geoJsonCheckbox1.checked || geoJsonCheckbox2.checked;
+            } else {
+                // If swipe is not enabled, the GeoJSON layer visibility depends only on the first checkbox
+                geoJsonDataSource.show = geoJsonCheckbox1.checked;
+            }
+        }
+
+        // Update Imagery Layers Visibility
+        Object.keys(addedImageryLayers).forEach(layerKey => {
+            const layer = addedImageryLayers[layerKey];
+            const checkbox1 = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+            const checkbox2 = document.querySelector(`#layerscontrol2-dropdown #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+
+            if (layer) {
+                // Check if swipe is enabled and set visibility and split direction accordingly
+                if (isSwipeEnabled) {
+                    // If swipe is enabled, the layer is visible if either of the checkboxes is checked
+                    layer.show = checkbox1.checked || checkbox2.checked;
+
+                    // Set the split direction based on which checkbox is checked
+                    if (checkbox1.checked) {
+                        layer.splitDirection = Cesium.SplitDirection.LEFT;
+                    } else {
+                        layer.splitDirection = Cesium.SplitDirection.RIGHT;
+                    }
+                } else {
+                    // If swipe is not enabled, the layer visibility depends only on the first checkbox
+                    layer.show = checkbox1.checked;
+                    layer.splitDirection = Cesium.SplitDirection.NONE; // No split direction when swipe is disabled
+                }
+            }
+        });
+    }
+
+
+    let lastSwipePosition = 0.5; // Default to the middle, update as needed
+
+
+    /********************************************************************************
+     * Event Listener for Toggle-Swipe Button
+     * - Toggles the swipe functionality on and off.
+     * - Changes the appearance of the button based on the state of the swipe.
+     * - Manages the display of the second layer control panel and resets layers when swipe is disabled.
+     ********************************************************************************/
+
+     // Global variable to store the state of checkboxes in the second panel
+    let layerVisibilityState = {};
+
+    // Function to store the state of all checkboxes in a given panel
+    function storeCheckboxStates(panelId) {
+        const checkboxes = document.querySelectorAll(`#${panelId} input[type="checkbox"]`);
+        checkboxes.forEach(checkbox => {
+            layerVisibilityState[checkbox.id] = checkbox.checked;
+        });
+    }
+
+    // Function to restore the state of all checkboxes in a given panel
+    function restoreCheckboxStates(panelId) {
+        const checkboxes = document.querySelectorAll(`#${panelId} input[type="checkbox"]`);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = layerVisibilityState[checkbox.id] || false; // Restore state or default to false
+            initialGeoJSONCheckbox2.checked = initialGeoJSONCheckbox1.checked
+        });
+    }
+
+     document.getElementById('toggle-swipe').addEventListener('click', function() {
+    // Toggle the swipe state
+    isSwipeEnabled = !isSwipeEnabled;
+
+    // Change the button color based on the swipe state
+    if (isSwipeEnabled) {
+        this.style.backgroundColor = 'green';
+
+        // Restore the checkbox states for the second panel when enabling swipe
+        restoreCheckboxStates('layerscontrol2-dropdown');
+
+        // Initialize swipe or show the second panel
+        initializeSwipe();
+        document.getElementById('layerControls2').style.display = 'block';
+    } else {
+        this.style.backgroundColor = 'red';
+        // Store the checkbox states for the second panel before disabling swipe
+        storeCheckboxStates('layerscontrol2-dropdown');
+        
+    }
+
+        // Reference to the second layer control panel
+        var layerControls2Panel = document.getElementById('layerControls2');
+
+        // Initialize swipe or reset layers based on the swipe state
+        if (isSwipeEnabled) {
+            initializeSwipe();
+            layerControls2Panel.style.display = 'block';
+        } else {
+            if (swipeElement && swipeElement.parentNode) {
+                lastSwipePosition = viewer.scene.splitPosition; // Store the last swipe position
+                swipeElement.parentNode.removeChild(swipeElement); // Remove the swipe element
+                swipeElement = null;
+            }
+            layerControls2Panel.style.display = 'none';
+            resetLayersToNormal();
+        }
+
+        // Update the visibility of all layers
+        updateLayerVisibility();
+        
+    });
+
+    
+    
+    /********************************************************************************
+     * Function to Uncheck and Hide Right Panel Layers
+     * - Unchecks all checkboxes in the second layer control panel, except for a specific checkbox (e.g., 'InitialGeoJSON').
+     ********************************************************************************/
+    function uncheckAndHideRightPanelLayers() {
+        const checkboxes = document.querySelectorAll('#layerscontrol2-dropdown input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.id !== "InitialGeoJSON") {
+                checkbox.checked = false;
+            }
+        });
+    }
+
+    /********************************************************************************
+     * Function to Reset Layers to Normal State
+     * - Resets the GeoJSON layer and imagery layers to their normal visibility and split direction.
+     * - This is used when the swipe functionality is turned off.
+     ********************************************************************************/
+    function resetLayersToNormal() {
+        // Reset the GeoJSON layer visibility
+        if (geoJsonDataSource) {
+            geoJsonDataSource.show = document.querySelector('#layerControls #InitialGeoJSON').checked;
+        }
+
+        // Reset the visibility and split direction of imagery layers
+        Object.keys(addedImageryLayers).forEach(layerKey => {
+            const layer = addedImageryLayers[layerKey];
+            if (layer) {
+                layer.splitDirection = Cesium.SplitDirection.NONE;
+                layer.show = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`).checked;
+            }
+        });
+
+        // Update the visibility of all layers
+        updateLayerVisibility();
+    }
+
+
+    /**
+     * Function to Close the Splash Screen and Fly to the GeoJSON Data Source
+     * - Hides the splash screen when called.
+     * - If it's the initial time closing the splash screen, it triggers a 'fly-to' animation to the GeoJSON data source in the viewer.
+     * - Ensures that the 'fly-to' animation only occurs the first time the splash screen is closed.
+     */
+    function closeSplashAndFlyTo() {
+        // Hide the splash screen
+        document.getElementById('splashScreen').style.display = 'none';
+
+        // Fly to the GeoJSON data source only on the initial closing of the splash screen
+        if (!initialSplashScreenClosed) {
+            viewer.flyTo(geoJsonDataSource);
+            initialSplashScreenClosed = true; // Mark that the initial splash screen has been closed
+        }
+    }
+
+    // Attach the closeSplashAndFlyTo function to the close button on the splash screen
+    document.getElementById('splashScreen').querySelector('button').onclick = closeSplashAndFlyTo;
+
+    /**
+     * Event Listener for the Navigation Help Button
+     * - Toggles the display of the splash screen when the navigation help button is clicked.
+     * - This provides an easy way for users to access the splash screen and navigation instructions at any time.
+     */
+    document.querySelector('.cesium-navigation-help-button').addEventListener('click', function() {
+        let splashScreen = document.getElementById('splashScreen');
+        if (splashScreen) {
+            // Check if the splash screen is currently hidden
+            if (splashScreen.style.display === 'none') {
+                // If hidden, show the splash screen
+                splashScreen.style.display = 'block';
+            } else {
+                // If shown, hide the splash screen
+                splashScreen.style.display = 'none';
+            }
+        }
+    });
+
+
+
+
+  </script>
+</body>
+</html>
