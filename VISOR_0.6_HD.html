@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  
+  <style type="text/css">
+    /* Toolbars and Buttons */
+    #toolbar-imagery { z-index: 1000; }
+    #toolbar-glacier { z-index: 1000; }
+    #toolbar-year { z-index: 1000; }
+    #toggle-imagery{ 
+        z-index: 1000; 
+        width: 80px; 
+        height: 31px;
+        margin-top: 2px;
+    
+    }
+  
+    
+    #toolbar-button { z-index: 1; position: fixed; top: 250px; left: 20px; }
+
+    /* Dropdown Menus */
+    .dropdown {
+        
+        display: inline-block;
+        z-index: 1000;
+        display: inline-block;
+        color: white; /* Text color */
+        background-color: #313336; /* Button background color */
+        border: 1px solid black; /* Border color */
+        padding: 8px 16px; /* Top/bottom and left/right padding */
+        font-size: 12px; /* Text size */
+        font-weight: bold; /* Text weight */
+        text-transform: uppercase; /* Uppercase text */
+        border-radius: 5px; /* Rounded corners */
+        
+        cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+        transition: all 0.2s ease-in-out; /* Transition for hover effects */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+        font-family: 'arial', sans-serif;
+        height: 15px;
+
+    }
+    .dropdown:hover { 
+        background-color: #5586b7; cursor: pointer;  
+        box-shadow: 0 0 8px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+    }
+
+    /* Dropdown Content */
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        color: red;
+        min-width: 200px;
+        box-shadow: 0 8px 16px 0 #2e2e2e;
+        z-index: 1000;
+        max-height: 225px; /* Adjust this value to fit your design needs */
+        overflow-y: auto; /* Enables vertical scrolling if content exceeds max-height */
+        overflow-x: hidden; /* Hides horizontal scrollbar */
+        border-radius: 2px;
+        top: 35px;
+    }
+    /* Style the labels inside the dropdown to match the cesium-button selectors */
+    .dropdown-content label {
+    color: white; /* Text color to match the selectors */
+    padding: 12px 16px; /* Padding to match the selectors */
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s ease-in-out; /* Smooth transition for hover */
+    font-weight: normal;
+    font-size: 14px;
+    margin-bottom: -5px; 
+    font-family: 'Times New Roman', sans-serif;
+    }
+
+    .dropdown-content input[type='checkbox'] {
+    margin-bottom: 5px; /* Reduce space between checkboxes if it's too large */
+}
+    .dropdown:hover .dropdown-content { display: block; }
+    .dropdown:hover .dropdown-content label { color: black; }
+
+    /* Layer Controls */
+    #layerControls2 {
+          left: 70%;
+          display: none;
+    }
+
+       /* Legend Box */
+    #legend {
+        display: none;
+        position: absolute;
+        bottom: 15%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Legend Box */
+    #legend-LST {
+        display: none;
+        position: absolute;
+        bottom: 35%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend-LST span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend-LST .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Legend Box */
+    #legend-AIR {
+        display: none;
+        position: absolute;
+        bottom: 55%;
+        left: 25px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    #legend-AIR span {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    #legend-AIR .color-box {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Splash Screen */
+    #splashScreen {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgb(255, 255, 255);
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 600px;
+        max-width: 90%;
+        height: 450px;
+        max-height: 90%;
+        overflow: auto;
+        
+    }
+    #splashScreen button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+        font-family: Arial;
+        font-weight: bold;
+    }
+    #splashScreen button:hover { background-color: #45a049; }
+
+
+
+
+    /* Button Panel */
+#buttonPanel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+    justify-content: center;
+    gap: 5px; /* Space between buttons */
+    margin-top: 25px; /* Spacing from the content above */
+}
+
+/* Style for the first button to span two columns */
+#buttonPanel > button:first-child {
+    grid-column: 2 / span 1; /* This will make it occupy the first two columns */
+    padding: 10px 20px; /* Adjust padding as needed */
+}
+
+/* Style for the second button */
+#buttonPanel > button:last-child {
+    grid-column: 3; /* This will place it in the third column */
+    padding: 10px 20px; /* Adjust padding as needed */
+}
+
+
+    /* Style for the smaller button */
+    #splashScreen button:last-child {
+         /* Smaller padding */
+        width: 10px;
+    }
+
+    /* Splash Screen */
+    #splashScreen2 {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 600px;
+        max-width: 90%;
+        height: 450px;
+        max-height: 90%;
+        overflow: auto;
+    }
+    #splashScreen2 button {
+        margin-top: 6px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+        font-family: Arial;
+        font-weight: bold;
+    }
+    #splashScreen2 button:hover { background-color: #45a049; }
+
+    /* Button Panel */
+   /* Button Panel 2 */
+    /* Button Panel 2 */
+#buttonPanel2 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+    justify-content: center;
+    gap: 5px; /* Spacing between buttons */
+    margin-top: 25px; /* Spacing from the content above */
+}
+
+    /* Style for the smaller button */
+    #splashScreen2 button:first-child {
+            /* Smaller padding */
+            width: 10px;
+            justify-self: end; /* Align the first button to the end (right) of its column */           
+        }
+
+    /* Style for the smaller button */
+    #splashScreen2 button:last-child {
+         /* Smaller padding */
+        width: 10px;
+    }
+
+      /* Splash Screen */
+      #splashScreen3 {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 600px;
+        max-width: 90%;
+        height: 450px;
+        max-height: 90%;
+        overflow: auto;
+    }
+    
+    #splashScreen3 button {
+        margin-top: 100px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+        font-family: Arial;
+        font-weight: bold;
+    }
+    #splashScreen3 button:hover { background-color: #45a049; }
+
+    #buttonPanel3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+    justify-content: center;
+    gap: 5px; /* Spacing between buttons */
+    margin-top: 25px; /* Spacing from the content above */
+}
+
+    /* Style for the smaller button */
+    #splashScreen3 button:first-child {
+            /* Smaller padding */
+            width: 10px;
+            justify-self: end; /* Align the first button to the end (right) of its column */           
+        }
+
+    /* Style for the smaller button */
+    #splashScreen3 button:last-child {
+         /* Smaller padding */
+        width: 10px;
+    }
+
+    
+      /* Splash Screen */
+      #splashScreen4 {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        max-width: 90%;
+        height: 300px;
+        max-height: 90%;
+        overflow: auto;
+    }
+    #splashScreen4 button {
+        margin-top: 100px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+        font-family: Arial;
+        font-weight: bold;
+    }
+    #splashScreen4 button:hover { background-color: #45a049; }
+
+
+    #buttonPanel4 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+    justify-content: center;
+    gap: 5px; /* Spacing between buttons */
+    margin-top: 25px; /* Spacing from the content above */
+}
+
+    /* Style for the smaller button */
+    #splashScreen4 button:first-child {
+            /* Smaller padding */
+            width: 10px;
+            justify-self: end; /* Align the first button to the end (right) of its column */           
+        }
+
+    /* Style for the smaller button */
+    #splashScreen4 button:last-child {
+         /* Smaller padding */
+        width: 10px;
+    }
+    
+      /* Splash Screen */
+      #splashScreen5 {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 1002;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        max-width: 90%;
+        height: 300px;
+        max-height: 90%;
+        overflow: auto;
+    }
+    #splashScreen5 button {
+        margin-top: 100px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+        font-family: Arial;
+        font-weight: bold;
+    }
+    #splashScreen5 button:hover { background-color: #45a049; }
+
+    
+    /* Button Panel */
+#buttonPanel5 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+    justify-content: center;
+    gap: 5px; /* Space between buttons */
+    margin-top: 25px; /* Spacing from the content above */
+}
+
+/* Style for the first button to span two columns */
+#buttonPanel5 > button:first-child {
+    grid-column: 1 / span 1; /* This will make it occupy the first two columns */
+    padding: 10px 20px; /* Adjust padding as needed */
+    justify-self: end;
+}
+
+/* Style for the second button */
+#buttonPanel5 > button:last-child {
+    grid-column: 2 / span 1; /* This will place it in the third column */
+    padding: 10px 20px; /* Adjust padding as needed */
+}
+
+/* Style for the smaller button */
+#splashScreen5 button:first-child {
+         /* Smaller padding */
+        width: 10px;
+    }
+   /* Additional CSS to ensure no white space around the Cesium container */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevents scrollbars from appearing */
+}
+
+/* Set the Cesium container to cover the full viewport */
+#cesiumContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+    /* Ensure the InfoBox takes up as much space as needed */
+    .cesium-infoBox {
+    width: 100%;
+    height: auto; /* Remove this if you don't want the InfoBox itself to scroll */
+    overflow-y: hidden; /* Hide vertical scrollbar for the outer InfoBox */
+    margin: 30px 10px 0 0;
+    max-width: 400px;
+    max-height: 600px;
+    z-index: 15000;
+    
+}
+
+ /* Ensure the InfoBox takes up as much space as needed */
+ .cesium-infoBox-iframe {
+    height:600px !important;
+    
+}
+
+    /* Ensure images fill the width and have a responsive height */
+    .cesium-infoBox img {
+        width: 100%;
+        height: auto;
+        display: block; /* Removes any extra space around the image */
+    }
+
+    .cesium-infoBox-description {
+    padding: 15px;
+    text-align: center;
+    min-height: 400px; /* Set a minimum height to ensure the panel is not too small initially */
+    max-height: 600px; /* Optional: Set a maximum height if the content is very long */
+    overflow-y: auto; /* Add a scrollbar if the content exceeds the max-height */
+}
+
+#dropdown-glacier.cesium-button {
+  color: white; /* Text color */
+  background-color: #313336; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: all 0.2s ease-in-out; /* Transition for hover effects */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-right: 10px; /* Space between buttons */
+}
+
+#dropdown-glacier.cesium-button:hover {
+  background-color: #5586b7; /* Slightly darker shade on hover */
+  box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+}
+
+/* Optional: Add a focus style for accessibility */
+#dropdown-glacier.cesium-button:focus {
+    box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7); /* Green glow to indicate focus */
+}
+
+#dropdow-year.cesium-button {
+  color: white; /* Text color */
+  background-color: #313336; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: all 0.2s ease-in-out; /* Transition for hover effects */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-right: 10px; /* Space between buttons */
+}
+
+#dropdow-year.cesium-button:hover {
+  background-color: #5586b7; /* Slightly darker shade on hover */
+  box-shadow: 0 0 8px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+}
+
+/* Optional: Add a focus style for accessibility */
+#dropdow-year.cesium-button:focus {
+    box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7);}
+
+
+#dropdow-imagery.cesium-button {
+  color: white; /* Text color */
+  background-color: #313336; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: all 0.2s ease-in-out; /* Transition for hover effects */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-right: 10px; /* Space between buttons */
+}
+
+#dropdow-imagery.cesium-button:hover {
+  background-color: #5586b7; /* Slightly darker shade on hover */
+  box-shadow: 0 0 8px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+}
+
+/* Optional: Add a focus style for accessibility */
+#dropdow-imagery.cesium-button:focus {
+    box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7);}
+
+/* Optional: Add a focus style for accessibility */
+#toggle-imagery:focus {
+    box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7);}
+
+
+#toggle-imagery{
+  color: black; /* Text color */
+  background-color: #edffff; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-left: 2px; /* Space between buttons */
+  
+}
+
+#toggle-imagery:hover{
+  background-color: #4CAF50; /* Slightly darker shade on hover and focus */
+  box-shadow: 0 0 8px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+}
+
+#toggle-imagery:active {
+  
+    box-shadow: 0 0 2px 2px rgba(237, 255, 255, 0.7);
+    transform: translateY(4px); /* Move the button down slightly to simulate being pressed */
+}
+
+#toggle-swipe{
+  z-index: 1000; 
+  
+  width: 70px; 
+  height: 32px; 
+  color: white; /* Text color */
+  background-color: #313336; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-right: 10px; /* Space between buttons */
+  
+}
+
+#toggle-swipe:hover{
+  background-color: #5586b7; /* Slightly darker shade on hover and focus */
+  box-shadow: 0 0 8px 2px rgba(237, 255, 255, 0.7); /* Increased shadow on hover for a "lifted" effect */
+}
+
+
+
+/* Adjustments for different screen widths */
+@media (max-width: 1024px) {
+  /* Styles for screens smaller than 768px wide */
+  #toolbar-imagery {
+    top: 5%;
+    left: 12%; /* Center the button */
+    transform: translateX(-50%); /* Adjust for the width of the button */
+  }
+  #toolbar-glacier {
+    top: 2%; /* Move down to avoid overlapping */
+    left: 14.3%; /* Center the button */
+    transform: translateX(-50%);
+  }
+  #toolbar-year {
+    top: 8%; /* Move down further to avoid overlapping */
+    left: 12.5%; /* Center the button */
+    transform: translateX(-50%);
+  }
+}
+
+#toolbar-container {
+    display: grid;
+    grid-template-columns: repeat(4, auto); /* Creates four columns */
+    gap: 5px; /* Adjust the gap between grid items */
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background-color: rgba(161, 158, 158, 0.44);
+    border-radius: 5px;
+    padding: 3px;
+
+}
+
+#toolbar-container-2 {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 5px;
+    position: fixed;
+    top: 10px;
+    right: 70px;
+    z-index: 1000;
+    border-radius: 5px;
+    padding: 3px;
+    max-width: 95%;
+}
+.cesium-viewer-toolbar{
+    top:10px
+}
+
+#layers-container {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 10px;
+    position: fixed;
+    top: 10px;
+    right: 300px;
+    z-index: 1000;
+    border-radius: 5px;
+    padding: 3px;
+    max-width: 95%;
+    background-color: rgba(161, 158, 158, 0.44);
+}
+
+
+/* Adjust the layout for smaller screens */
+@media (max-width: 768px) {
+    #toolbar-container-2 {
+        grid-template-columns: repeat(2, 1fr); /* Adjust to two columns on small screens */
+        right: 2%; /* Closer to the edge for smaller screens */
+        top: 2%; /* Provide more space from the top */
+    }
+}
+
+#scaleBox
+     {
+        padding: 0px 10px;
+        bottom: 45px;
+        right: 9px;
+        position: absolute;
+        display: inline-block;
+        background: rgba(161, 158, 158, 0.44);
+        color: #bacdcc;
+        border-radius: 5px;
+        font-family: Arial;
+        font-size: 14px;
+        font-style: normal;
+        text-align: center;
+        white-space:pre-wrap;
+        z-index: 1200;
+     }
+     
+     .scale-text
+     {
+        display: inline-block;
+        position: relative;
+        color: white;
+        border-radius: 2px;
+        padding: 0px 0px;
+        margin: 0px 0px;
+        left: -12px;
+        font-family: Arial;
+        font-size: 14px;
+        font-style: normal;
+        text-align: center;
+        white-space:pre-wrap;
+     }
+     
+     .scalebar
+     {
+        background-color: white;
+        height:6px;
+        width:100px;
+        padding-left: 5%;
+        margin-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        z-index: 15000;
+     }
+
+     #infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    gap: 10px; /* Space between the columns */
+    margin-top: 0px; /* Space above the grid */
+    margin-bottom: 0px; /* Space below the grid */
+}
+
+#supportGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr; /* Three columns of equal width */
+    align-items: center; /* Align items vertically in the center */
+    gap: 0px; /* Space between the grid items */
+    margin-top: 10px; /* Space above the grid */
+    margin-bottom: 0px; /* Space below the grid */
+    margin-left: -10px;
+    justify-items: center;
+}
+
+/* Style for the paragraph "Supported by" */
+#supportGrid p {
+    font-weight: bold; /* Make text bold */
+    /* Add any additional styling you need here */
+}
+
+/* Style for the images */
+#supportGrid img {
+    width: 80%; /* Make images fill their container */
+    height: auto; /* Maintain aspect ratio */
+    /* Add any additional styling you need here */
+}
+
+#creditsGrid {
+  display: grid;
+  grid-template-columns: auto auto; /* Two columns, the first one auto-sized and the second one taking up the rest of the space */
+  align-items: center; /* Align items vertically */
+  justify-content: start; /* Align items to the start of the container horizontally */
+  gap: 10px; /* Space between the grid items */
+  margin-bottom: 20px; /* Space below the grid */
+  margin-left: 20px;
+}
+
+
+
+#creditsGrid p:first-child {
+  font-weight: bold; /* Make 'Created by' bold */
+}
+
+#SelectGlacier-instructions-button, #SelectPeriod-instructions-button, #SelectImagery-instructions-button  {
+    color: white; /* Text color */
+    background-color: #313336; /* Button background color */
+    border: 1px solid black; /* Border color */
+    padding: 8px 16px; /* Top/bottom and left/right padding */
+    font-size: 12px; /* Text size */
+    font-weight: bold; /* Text weight */
+    text-transform: uppercase; /* Uppercase text */
+    border-radius: 5px; /* Rounded corners */
+    outline: none; /* Remove outline */
+    cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+    transition: all 0.2s ease-in-out; /* Transition for hover effects */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+    display: inline-block; /* To apply padding and borders correctly */
+    margin-right: 10px; /* Space between buttons */
+    text-decoration: none; /* No underline by default */
+    font-family: 'Arial', sans-serif;
+  }
+
+  #ToggleImagery-instructions-button{
+    color: black; /* Text color */
+  background-color: #edffff; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-left: 2px; /* Space between buttons */
+  width: 50px;
+  font-family: 'Arial', sans-serif;
+  
+  }
+
+  #LayersPanel-instructions-button{
+    
+        display: inline-block;
+        z-index: 1000;
+        display: inline-block;
+        color: white; /* Text color */
+        background-color: #313336; /* Button background color */
+        border: 1px solid black; /* Border color */
+        padding: 8px 16px; /* Top/bottom and left/right padding */
+        font-size: 12px; /* Text size */
+        font-weight: bold; /* Text weight */
+        text-transform: uppercase; /* Uppercase text */
+        border-radius: 5px; /* Rounded corners */
+        
+        cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+        transition: all 0.2s ease-in-out; /* Transition for hover effects */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+        font-family: 'arial', sans-serif;
+        height: 15px;
+        width: 55px;
+
+ }
+
+ #Swipe-instructions-button{
+      z-index: 1000; 
+  
+  width: 55px; 
+  height: 15px; 
+  color: white; /* Text color */
+  background-color: #313336; /* Button background color */
+  border: 1px solid black; /* Border color */
+  padding: 8px 16px; /* Top/bottom and left/right padding */
+  font-size: 12px; /* Text size */
+  font-weight: bold; /* Text weight */
+  text-transform: uppercase; /* Uppercase text */
+  border-radius: 5px; /* Rounded corners */
+  outline: none; /* Remove outline */
+  cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for color and shadow */
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+  margin-right: 10px; /* Space between buttons */
+  font-family: 'arial', sans-serif;
+ }
+
+  .instructions-grid {
+    display: grid;
+    grid-template-columns: auto 1fr; /* button | description */
+    grid-row-gap: 10px; /* Adjust gap between rows as needed */
+    align-items: center; /* Vertically center align grid items */
+    margin-top: 20px; /* Spacing from the instructions */
+}
+
+.instruction-item {
+    display: contents; /* This allows the children to be grid items themselves */
+}
+
+.instruction-item p {
+    margin: 0; /* Remove margin from the paragraph if desired */
+    /* Other styling for the button */
+}
+
+.instruction-item span {
+    padding-left: 10px; /* Spacing between button and description */
+    /* Other styling for the description text */
+}
+
+.layers-instructions-grid {
+    display: flex;
+    justify-content: center; /* Center children horizontally */
+    align-items: center; /* Center children vertically */
+    margin-top: 20px; /* Spacing from the instructions */
+}
+
+.layers-instruction-item {
+    display: flex; /* Use flexbox for direct children */
+    justify-content:center; /* Space out children evenly */
+    width: 100%; /* Take the full width of the parent */
+}
+
+#leftside-instructions-button
+{
+    color: white; /* Text color */
+    background-color: #313336; /* Button background color */
+    border: 1px solid black; /* Border color */
+    padding: 8px 16px; /* Top/bottom and left/right padding */
+    font-size: 12px; /* Text size */
+    font-weight: bold; /* Text weight */
+    text-transform: uppercase; /* Uppercase text */
+    border-radius: 5px; /* Rounded corners */
+    outline: none; /* Remove outline */
+    cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+    transition: all 0.2s ease-in-out; /* Transition for hover effects */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+    display: inline-block; /* To apply padding and borders correctly */
+    margin-right: 10px; /* Space between buttons */
+    text-decoration: none; /* No underline by default */
+    font-family: 'Arial', sans-serif;
+    width: 75px;
+    height:18px;
+  }
+
+  #rightside-instructions-button
+{
+    color: white; /* Text color */
+    background-color: #313336; /* Button background color */
+    border: 1px solid black; /* Border color */
+    padding: 8px 16px; /* Top/bottom and left/right padding */
+    font-size: 12px; /* Text size */
+    font-weight: bold; /* Text weight */
+    text-transform: uppercase; /* Uppercase text */
+    border-radius: 5px; /* Rounded corners */
+    outline: none; /* Remove outline */
+    cursor: pointer; /* Cursor to pointer to indicate it's clickable */
+    transition: all 0.2s ease-in-out; /* Transition for hover effects */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); /* Subtle shadow for depth */
+    display: inline-block; /* To apply padding and borders correctly */
+    margin-right: 10px; /* Space between buttons */
+    text-decoration: none; /* No underline by default */
+    font-family: 'Arial', sans-serif;
+    width: 75px;
+    height:18px;
+  }
+</style>
+
+</head>
+<body>
+
+<div id="cesiumContainer">
+
+    <div id="layers-container">
+          <!-- Dropdown for Layer Control -->
+        <div class="dropdown" id = "layerControls1">
+            <span class="dropbtn">Layers</span>
+            <div class="dropdown-content" id="layerControls">
+                <label><input type="checkbox" id="InitialGeoJSON"> PATAGONIAN</label>
+                <!-- More checkboxes added via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Second Dropdown for Layer Control -->
+        <div class="dropdown" id="layerControls2">
+            <span class="dropbtn">Layers Swipe</span>
+            <div class="dropdown-content" id="layerscontrol2-dropdown">
+                <label><input type="checkbox" id="InitialGeoJSON"> PATAGONIAN</label>
+                <!-- More checkboxes added via JavaScript -->
+            </div>
+        </div>
+       
+    </div>
+
+    <div id="toolbar-container">
+        
+    <!-- Toolbar for Glacier Selection -->
+    <div id="toolbar-glacier">
+        <select class="cesium-button" id="dropdown-glacier">
+            <!-- Options will be dynamically added here -->
+        </select>
+    </div>
+    
+        <!-- Toolbar for Year Selection -->
+    <div id="toolbar-year">
+        <select class="cesium-button" id="dropdow-year">
+            <option disabled selected>SELECT PERIOD</option>
+            <option value="0">2018 - 2019</option>
+            <option value="1">2019 - 2020</option>
+            <option value="2">2020 - 2021</option>
+            <option value="3">2021 - 2022</option>
+            <option value="4">2022 - 2023</option>
+            <option value="4">2023 - 2024</option>
+        </select>
+    </div>
+    
+       
+    <!-- Toolbar for Imagery Selection -->
+    <div id="toolbar-imagery">
+        <select class="cesium-button" id="dropdow-imagery">
+            <option disabled selected>Select Imagery Type</option>
+            <option value="0">Glacier Area</option>
+            <option value="1">LST</option>
+            <option value="2">Air Temperature</option>
+        </select>
+    </div>
+    
+        <!-- Button to Add Imagery -->
+        <button id="toggle-imagery">Submit</button>
+    </div>
+
+    
+
+    <div id="toolbar-container-2">
+               
+    <!-- Button to Enable Swipe -->
+    <button id="toggle-swipe">Swipe</button></div>
+
+    <div class = "cesium-viewer-toolbar"></div>
+    
+     
+     <!-- Map Legend -->
+    <div id="legend"> 
+        <h3 style="margin: 0; text-align: center;">SNOW PRESENCE</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #66b2da;"></span>PRESENCE</span>
+            <span><span class="color-box" style="background-color: #B94536;"></span>ABSENCE</span>
+        </div>
+    </div>
+
+    <!-- LST Imagery Legend -->
+    <div id="legend-LST" style="display: none;"> 
+        <h3 style="margin: 0; text-align: center;">LST Information</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #ff0000;"></span>High</span>
+            <span><span class="color-box" style="background-color: #00ff00;"></span>Medium</span>
+            <span><span class="color-box" style="background-color: #0000ff;"></span>Low</span>
+        </div>
+    </div>
+
+    <!-- AIR TEMPERATURE Imagery Legend -->
+    <div id="legend-AIR" style="display: none;"> 
+        <h3 style="margin: 0; text-align: center;">AIR Information</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <span><span class="color-box" style="background-color: #ff0000;"></span>High</span>
+            <span><span class="color-box" style="background-color: #00ff00;"></span>Medium</span>
+            <span><span class="color-box" style="background-color: #0000ff;"></span>Low</span>
+        </div>
+    </div>
+
+       <!-- Splash Screen -->
+       <div id="splashScreen">
+        <h2>Welcome to the 3D Patagonia Glaciers Viewer</h2>
+        <p>This application enables dynamic 3D visualization of over 80 glaciers within the Northern and Southern Patagonian Ice Fields. It features comprehensive data on Glacier Extent, Land Surface Temperature, and Air Temperature for each glacier during the summer seasons from 2018 to 2024. The information presented is derived from processing Landsat 8 and 9, Sentinel-2, and ERA5 imagery through Google Earth Engine (GEE).</p>
+        
+        <div id="infoGrid">
+            <a href="https://felipecamachoh.github.io/" target="_blank">Click for more information</a>
+            <a href="https://big-earth-course.users.earthengine.app/view/thesis-test" target="_blank">Click for GEE Application</a>
+        </div>
+    
+        <div id="supportGrid">
+            <p>Supported By:</p>
+            <a href="https://www.plus.ac.at/?lang=en" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Logo_der_Universit%C3%A4t_Salzburg.jpg/1200px-Logo_der_Universit%C3%A4t_Salzburg.jpg" alt="Supporting Organization 1">
+            </a>
+            <a href="https://www.upol.cz/en/" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Palacky_University_Olomouc_logo.png" alt="Supporting Organization 2">
+            </a>
+            <a href="https://master-cde.eu/" target="_blank">
+                <img src="https://master-cde.eu/wp-content/uploads/2020/05/CMIDE-logoCMYK.png" alt="Supporting Organization 3">
+            </a>
+        </div>
+        
+    
+        <div id="createdByContainer">
+            <p><strong>Created by:</strong> <a href="https://www.linkedin.com/in/felipe-camacho-hurtado/" target="_blank">Felipe Camacho Hurtado</a></p>
+        </div>
+    
+        <div id="buttonPanel">
+            <button onclick="document.getElementById('splashScreen').style.display='none'">START</button>
+            <button onclick="document.getElementById('splashScreen').style.display='none'; document.getElementById('splashScreen2').style.display='block';">></button>
+        </div>
+    </div>
+    
+
+
+    <div id="splashScreen2" style="display: none;">
+        <h2>How to use the App</h2>
+        <p>Below you will find the main buttons and their functionality. (hover on each button to see their location in the layout)</p>
+        <div class="instructions-grid">
+            <div class="instruction-item">
+                <p id="SelectGlacier-instructions-button" 
+                    onmouseover="document.getElementById('dropdown-glacier').style.backgroundColor='#5586b7', document.getElementById('dropdown-glacier').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('dropdown-glacier').style.backgroundColor=''; document.getElementById('dropdown-glacier').style.boxShadow='';">
+                    SELECT GLACIER
+                </p>
+                <span>Select the glacier you are interested in from the dropdown menu.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="SelectPeriod-instructions-button" 
+                    onmouseover="document.getElementById('dropdow-year').style.backgroundColor='#5586b7', document.getElementById('dropdow-year').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('dropdow-year').style.backgroundColor=''; document.getElementById('dropdow-year').style.boxShadow='';">
+                    SELECT PERIOD
+                </p>
+                <span>Choose the time period for which you want to view the glacier data.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="SelectImagery-instructions-button" 
+                    onmouseover="document.getElementById('dropdow-imagery').style.backgroundColor='#5586b7', document.getElementById('dropdow-imagery').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('dropdow-imagery').style.backgroundColor=''; document.getElementById('dropdow-imagery').style.boxShadow='';">
+                    SELECT IMAGERY TYPE
+                </p>
+                <span>Decide on the type of imagery to be displayed for the selected glacier.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="ToggleImagery-instructions-button" 
+                    onmouseover="document.getElementById('toggle-imagery').style.backgroundColor='#4CAF50', document.getElementById('toggle-imagery').style.boxShadow='0 0 8px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('toggle-imagery').style.backgroundColor=''; document.getElementById('toggle-imagery').style.boxShadow='';">
+                    SUBMIT
+                </p>
+                <span>Submit your selections to update the glacier visualization.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="LayersPanel-instructions-button" 
+                    onmouseover="document.getElementById('layerControls1').style.backgroundColor='#5586b7', document.getElementById('layerControls1').style.boxShadow='0 0 8px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('layerControls1').style.backgroundColor=''; document.getElementById('layerControls1').style.boxShadow='';">
+                    LAYERS
+                </p>
+                <span>Contain options to turn on/off the layers and modify their transparency.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="Swipe-instructions-button" 
+                    onmouseover="document.getElementById('toggle-swipe').style.backgroundColor='#5586b7', document.getElementById('toggle-swipe').style.boxShadow='0 0 8px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('toggle-swipe').style.backgroundColor=''; document.getElementById('toggle-swipe').style.boxShadow='';">
+                    SWIPE
+                </p>
+                <span>Enables the swipe functionality to visualize and compare imagery side to side.</span>
+            </div>
+        </div>
+
+
+        <div id="buttonPanel2">
+            <button onclick="document.getElementById('splashScreen2').style.display='none'; document.getElementById('splashScreen').style.display='block';"><</button>
+            <button id="getstarted2" onclick="document.getElementById('splashScreen2').style.display='none'">START</button>
+            <button onclick="document.getElementById('splashScreen3').style.display='block'; document.getElementById('splashScreen2').style.display='none'">></button>
+        </div>
+    </div>
+    
+    
+
+    <div id="splashScreen3" style="display: none;">
+        <h2>How does the Swipe works?</h2>
+        <p>After activating the Swipe feature, the map layout will be split into two distinct sections. Each section of the panel will operate independently, allowing for separate layer displays. You can control in which side of the split view to display a particular layer by checking or unchecking it in the following panels:</p>
+        <div class="layers-instructions-grid">
+            <div class="layers-instruction-item">
+                <p id="leftside-instructions-button" 
+                onmouseover="document.getElementById('layerControls1').style.backgroundColor='#5586b7', document.getElementById('layerControls1').style.boxShadow='0 0 8px 2px rgba(237, 255, 255, 0.7)';" 
+                onmouseout="document.getElementById('layerControls1').style.backgroundColor=''; document.getElementById('layerControls1').style.boxShadow='';">
+                    LEFT SIDE
+                </p>
+                <p id="rightside-instructions-button" 
+                    onmouseover="document.getElementById('layerControls2').style.backgroundColor='#5586b7', document.getElementById('layerControls2').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('layerControls2').style.backgroundColor=''; document.getElementById('layerControls2').style.boxShadow='';">
+                    RIGHT SIDE
+                </p>
+            </div>
+        </div>
+        <p>Then, you can move the swipe divisor to compare the layers enabled in each panel.</p>
+
+        <div id="buttonPanel3">
+            <button onclick="document.getElementById('splashScreen3').style.display='none'; document.getElementById('splashScreen2').style.display='block';"> < </button>
+            <button id="getstarted3" onclick="document.getElementById('splashScreen3').style.display='none'">START</button>
+            <button onclick="document.getElementById('splashScreen4').style.display='block'; document.getElementById('splashScreen3').style.display='none'"> > </button>
+        </div>
+    </div>
+    
+
+    <div id="splashScreen4" style="display: none;">
+        <h2>Welcome to the Glacier Viewer 4</h2>
+        <p>Instructions on how to use the app...</p>
+        <p><img src="your-image-url.jpg" alt="Instructions" /></p>
+        <div id="buttonPanel4">
+            <button onclick="document.getElementById('splashScreen4').style.display='none'; document.getElementById('splashScreen3').style.display='block';"> < </button>
+            <button id="getstarted4" onclick="document.getElementById('splashScreen4').style.display='none'">START</button>
+            <button onclick="document.getElementById('splashScreen5').style.display='block'; document.getElementById('splashScreen4').style.display='none'"> > </button>
+        </div>
+    </div>
+    
+
+    <div id="splashScreen5" style="display: none;">
+        <h2>Welcome to the Glacier Viewer 5</h2>
+        <p>Instructions on how to use the app...</p>
+        <p><img src="your-image-url.jpg" alt="Instructions" /></p>
+        <div id="buttonPanel5">
+            <button onclick="document.getElementById('splashScreen5').style.display='none'; document.getElementById('splashScreen4').style.display='block';"> < </button>
+            <button id="getstarted5" onclick="document.getElementById('splashScreen5').style.display='none'">START</button>
+        </div>
+    </div>
+    
+
+
+    <div id="scaleBox">
+        <div id="scalebar" class="w3-container w3-grey scalebar"></div>
+        <p id="scalebartag" class="scale-text">Distance Scale</p>
+      </div>
+</div>
+
+
+  
+<script type="module">
+    // Initial Setup
+    let initialSplashScreenClosed = false;
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhNWIwYTJmNC02ZWI2LTRhMjEtYTAwOC0yYzFiMTI3Zjk2YjciLCJpZCI6MTg5ODE0LCJpYXQiOjE3MDUzMTg4MjB9.G7uMRy1yiKRraTdIvk2HPZptxhSfB-tsDegfvaIOA9I';
+    let geoJsonDataSource;
+    let lastSelectedEntity = null;
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        terrain: Cesium.Terrain.fromWorldTerrain(),
+        animation: false, // Disables the animation widget
+        timeline: false,  // Disables the timeline widget
+        baseLayerPicker: false,
+        imageryProvider: false,
+        scene3DOnly: true,
+        shadows: false,
+        geocoder: false,
+        allowTextureFilterAnisotropic : false,
+        
+        
+    });
+
+    // Load default imagery layer
+    const layer = viewer.imageryLayers.addImageryProvider(
+        await Cesium.IonImageryProvider.fromAssetId(2)
+    );
+
+    // Dropdowns for Glacier and Year selection
+    const dropdownGlacier = document.getElementById('dropdown-glacier');
+    const dropdownYear = document.getElementById('dropdow-year');
+    
+    /********************************************************************************
+     * Asynchronously loads GeoJSON data and updates the UI components.
+     * - Loads GeoJSON data from Cesium Ion.
+     * - Synchronizes checkboxes in different panels for GeoJSON layer visibility.
+     * - Populates the dropdown menu with glacier names from the GeoJSON data.
+     ********************************************************************************/
+    
+    async function loadGeoJson() {
+        // Load GeoJSON data from Cesium Ion
+        const resource = await Cesium.IonResource.fromAssetId(2452161);
+        geoJsonDataSource = await Cesium.GeoJsonDataSource.load(resource, {
+            clampToGround: true,
+            fill: Cesium.Color.BLACK.withAlpha(0.5),
+        });
+
+        // Check if the GeoJSON data source is successfully loaded
+        if (geoJsonDataSource) {
+            // Synchronize and set up GeoJSON visibility checkboxes
+            synchronizeCheckboxes();
+
+            // Add the loaded GeoJSON data source to the Cesium viewer
+            viewer.dataSources.add(geoJsonDataSource);
+
+            // Populate the glacier dropdown with names from GeoJSON entities
+            populateGlacierDropdown();
+        }
+    }
+
+    function createTransparencySlider(panelId, dataSource) {
+    var panel = document.getElementById(panelId);
+    var slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0;
+    slider.max = 1;
+    slider.step = 0.01;
+    slider.value = 0.5; // Default value, assuming the polygons are initially semi-transparent
+    slider.className = 'geojson-transparency-slider';
+    slider.oninput = function() {
+        var newAlpha = parseFloat(this.value);
+        dataSource.entities.values.forEach(function(entity) {
+            // Update the alpha component of the polygon material color
+            if (entity.polygon && entity.polygon.material && entity.polygon.material.color) {
+                var color = entity.polygon.material.color.getValue();
+                entity.polygon.material = new Cesium.Color(color.red, color.green, color.blue, newAlpha);
+            }
+        });
+    };
+
+    // Append the slider to the panel
+    panel.appendChild(slider);
+}
+
+
+    let initialGeoJSONCheckbox1;
+    let initialGeoJSONCheckbox2;
+    /**
+     * Synchronizes checkboxes for controlling the visibility of the GeoJSON layer.
+     */
+    function synchronizeCheckboxes() {
+        // Find the GeoJSON checkboxes in both panels
+        initialGeoJSONCheckbox1 = document.querySelector('#layerControls #InitialGeoJSON');
+        initialGeoJSONCheckbox2 = document.querySelector('#layerControls2 #InitialGeoJSON');
+
+        // Set both checkboxes as checked by default and ensure the GeoJSON layer is shown
+        initialGeoJSONCheckbox1.checked = initialGeoJSONCheckbox2.checked = geoJsonDataSource.show = true;
+
+        // Add change event listeners to both checkboxes for synchronization
+        initialGeoJSONCheckbox1.addEventListener('change', function() {
+            geoJsonDataSource.show = this.checked;
+            initialGeoJSONCheckbox2.checked = this.checked;
+        });
+
+        initialGeoJSONCheckbox2.addEventListener('change', function() {
+            geoJsonDataSource.show = this.checked;
+            initialGeoJSONCheckbox1.checked = this.checked;
+        });
+    }
+
+    
+
+    /**
+     * Populates the dropdown menu with glacier names from the GeoJSON data.
+     */
+    function populateGlacierDropdown() {
+    // Add a placeholder option to the dropdown
+    let placeholderOption = document.createElement('option');
+    placeholderOption.textContent = 'Select Glacier';
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    dropdownGlacier.appendChild(placeholderOption);
+
+    // Extract glacier names and sort them alphabetically
+    let glacierNames = geoJsonDataSource.entities.values
+        .map(entity => entity.name)
+        .filter(name => name) // Remove any undefined or null names
+        .sort();
+
+    // Add a sorted option for each glacier entity in the GeoJSON data
+    glacierNames.forEach((name) => {
+        let option = document.createElement('option');
+        option.textContent = name;
+        option.value = name;
+        dropdownGlacier.appendChild(option);
+    });
+}
+
+function preloadImages(imageUrls) {
+    imageUrls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+    });
+}
+
+// Call this function with an array of all image URLs used in the description panels
+preloadImages([
+    'https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLACIER_AREA_CHART.png',
+    'https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLOBAL_LST_CHART.png',
+    'https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_CENTROID_LST_CHART.png',
+    'https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_AIR_TEMPERATURE_CHART.png',
+    // ... add all other image URLs here ...
+]);
+
+
+    // Call the function to load GeoJSON data
+    loadGeoJson();
+
+    let selectedName;  // Name of the selected glacier
+    let glaciersWithImagery = new Set();  // Set to store names of glaciers with imagery
+
+    /********************************************************************************
+     * Dropdown Glacier Selection Event Listener
+     * - Listens for changes in the glacier selection dropdown.
+     * - Updates the selected glacier and manages entity appearance and descriptions.
+     ********************************************************************************/
+    dropdownGlacier.addEventListener('change', function() {
+        selectedName = this.value;
+        const selectedEntity = geoJsonDataSource.entities.values.find(entity => entity.name === selectedName);
+
+        if (lastSelectedEntity) {
+            // Reset the appearance of the previously selected entity
+            lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.5);
+        }
+
+        if (selectedEntity) {
+            updateEntityAppearance(selectedEntity);
+            flyToAndDescribeEntity(selectedEntity);
+            lastSelectedEntity = selectedEntity;
+        }
+    });
+
+    /********************************************************************************
+     * Function to Update Entity Appearance
+     * - Updates the color of the entity based on the presence of imagery.
+     ********************************************************************************/
+    function updateEntityAppearance(entity) {
+        if (glaciersWithImagery.has(entity.name)) {
+            entity.polygon.material = Cesium.Color.BLACK.withAlpha(0);
+        } else {
+            entity.polygon.material = Cesium.Color.YELLOW.withAlpha(0.5);
+        }
+    }
+
+    /********************************************************************************
+     * Function to Fly to an Entity and Describe It
+     * - Focuses the viewer on the selected entity and sets its description.
+     ********************************************************************************/
+    function flyToAndDescribeEntity(entity) {
+        viewer.flyTo(entity).then(function () {
+            setDescription(entity);
+        });
+    }
+
+    /********************************************************************************
+     * Function to Set the Description of an Entity
+     * - Assigns a unique HTML description to an entity based on its name.
+     ********************************************************************************/
+     function setDescription(entity) {
+    let descriptionHtml = "";
+    switch (entity.name) {
+        case 'BENITO':
+            // Unique description for Benito Glacier
+            descriptionHtml = `
+                <h2>Time Series Charts (Median Composites) </h2>
+                <p>Glacier Area</p>
+                <a href="https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLACIER_AREA_CHART.png" target="_blank">
+                    <img src='https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLACIER_AREA_CHART.png' alt='Benito Glacier' style='width: 100%; height: auto; max-height: 100%; display: block;'>
+                </a>    
+                <p>Land Surface Temperature (Global)</p>
+                <a href="https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLOBAL_LST_CHART.png" target="_blank">
+                    <img src='https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_GLOBAL_LST_CHART.png' alt='Benito Glacier' style='width: 100%; height: auto; max-height: 100%; display: block;'>
+                </a>  
+                <p>Land Surface Temperature (Centroid)</p>
+                <a href="https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_CENTROID_LST_CHART.png" target="_blank">
+                    <img src='https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_CENTROID_LST_CHART.png' alt='Benito Glacier' style='width: 100%; height: auto; max-height: 100%; display: block;'>
+                </a>  
+                <p>Air Temperature</p>
+                <a href="https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_AIR_TEMPERATURE_CHART.png" target="_blank">
+                    <img src='https://raw.githubusercontent.com/felipecamachoh/Master_Thesis/main/Charts/Benito/BENITO_AIR_TEMPERATURE_CHART.png' alt='Benito Glacier' style='width: 100%; height: auto; max-height: 100%; display: block;'>
+                </a>  
+               
+
+            `;
+            break;
+        case 'STEFFEN':
+            // Unique description for Steffen Glacier
+            descriptionHtml = `
+                <h1>Steffen Glacier</h1>
+                <p>Specific details about Steffen Glacier.</p>
+                <img src='URL_for_Steffen_Glacier_Image' alt='Steffen Glacier' style='width: 100%; height: auto; max-height: 100%; display: block;'>
+            `;
+            break;
+        // Add cases for other glaciers with their unique descriptions
+        default:
+            // Default action or description for entities not specifically handled
+            descriptionHtml = "<p>No specific information available.</p>";
+            break;
+    }
+
+    // Set the entity description
+    entity.description = descriptionHtml;
+    viewer.selectedEntity = entity; // Explicitly set the selected entity
+
+    // Adjust the size of the InfoBox after the content is set
+    adjustInfoBoxSize();
+}
+
+// Function to adjust the size of the InfoBox
+function adjustInfoBoxSize() {
+    const infoBox = viewer.infoBox.frame;
+    if (infoBox) {
+        infoBox.addEventListener('load', function () {
+            try {
+                const body = infoBox.contentDocument.body;
+                infoBox.style.height = body.scrollHeight + 'px';
+            } catch(e) {
+                console.error("Could not adjust iframe height:", e);
+            }
+        });
+    }
+}
+
+// If the iframe document is already loaded, you can set the style directly
+const infoBox = viewer.infoBox.frame;
+if (infoBox && infoBox.contentDocument && infoBox.contentDocument.body) {
+    infoBox.style.maxHeight = '600px';
+}
+
+
+    /********************************************************************************
+     * Screen Space Event Handler for Clicks on Entities
+     * - Detects clicks on entities within the viewer.
+     * - Sets the description of the clicked entity if it matches the selected glacier.
+     ********************************************************************************/
+    const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    clickHandler.setInputAction(function(click) {
+        const pickedObject = viewer.scene.pick(click.position);
+        if (Cesium.defined(pickedObject) && Cesium.defined(pickedObject.id)) {
+            const pickedEntity = pickedObject.id;
+            if (pickedEntity.name === selectedName) {
+                setDescription(pickedEntity);
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    
+    let selectedYear;  // Variable to store the selected year from the dropdown
+
+    /********************************************************************************
+     * Dropdown Year Selection Event Listener
+     * - Listens for changes in the year dropdown selection.
+     * - Updates the global `selectedYear` variable based on the user's choice.
+     ********************************************************************************/
+
+    dropdownYear.addEventListener('change', function() {
+        // Update `selectedYear` with the selected option's text
+        selectedYear = this.options[this.selectedIndex].text;
+    });
+
+    /********************************************************************************
+     * Viewer Screen Space Event Handler for Left Clicks
+     * - Sets an event listener for left mouse button clicks within the Cesium viewer.
+     * - Picks and logs the name of the clicked feature (if any) in the console.
+     * - This can be useful for debugging or for future feature implementation.
+     ********************************************************************************/
+
+    viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
+        // Pick the feature at the clicked position
+        var pickedFeature = viewer.scene.pick(movement.position);
+        
+        // Check if a feature was picked and log its name
+        if (Cesium.defined(pickedFeature)) {
+            console.log(pickedFeature.id.name);
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+                        
+    let addedImageryLayers = {}; // Object to store added imagery layers
+
+    /********************************************************************************
+     * UI Elements
+     ********************************************************************************/
+    var layerControls1 = document.getElementById('layerControls'); // First layers panel
+    var layerControls3 = document.getElementById('layerscontrol2-dropdown'); // Second layers panel
+
+    /********************************************************************************
+     * Toggle Imagery Event Handler
+     * - Handles the click event for the toggle imagery button.
+     * - Manages the addition of imagery layers based on selected glacier and year.
+     * - Updates UI elements accordingly.
+     ********************************************************************************/
+     document.querySelector('#toggle-imagery').onclick = async function() {
+    const selectedImageryType = document.getElementById('dropdow-imagery').options[document.getElementById('dropdow-imagery').selectedIndex].text;
+    let layerKey = `${selectedName}-${selectedYear}-${selectedImageryType}`;
+    let assetId = getAssetId(selectedName, selectedYear, selectedImageryType);
+
+    if (assetId) {
+        resetLastSelectedEntityAppearance();
+
+        if (!addedImageryLayers[layerKey]) {
+            try {
+                const imageryProvider = await Cesium.IonImageryProvider.fromAssetId(assetId);
+                let imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider);
+                imageryLayer.alpha = 0.5; // Set default transparency
+                addedImageryLayers[layerKey] = imageryLayer;
+                appendCheckboxToPanels(layerKey);
+
+                glaciersWithImagery.add(selectedName);
+                updateUIOnImageryAddition(selectedImageryType);
+
+                // Update split direction based on swipe enabled state
+                if (isSwipeEnabled) {
+                    let checkboxInFirstPanel = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+                    imageryLayer.splitDirection = checkboxInFirstPanel && checkboxInFirstPanel.checked ? Cesium.SplitDirection.LEFT : Cesium.SplitDirection.RIGHT;
+                } else {
+                    // If swipe is not enabled, the imagery should cover the entire viewer
+                    imageryLayer.splitDirection = Cesium.SplitDirection.NONE;
+                }
+
+                console.log("Conditions met, imagery added for:", layerKey);
+            } catch (error) {
+                console.error("Error adding imagery layer:", error);
+            }
+        } else {
+            console.log("Imagery layer already added for:", layerKey);
+        }
+    } else {
+        console.log("Conditions not met. Selected name is:", selectedName, "and selected year is:", selectedYear, "and imagery type is:", selectedImageryType);
+    }
+};
+
+
+
+
+    /********************************************************************************
+     * Helper Functions
+     ********************************************************************************/
+     function getAssetId(name, year, imageryType) {
+    // Define a mapping for each combination of glacier, year, and imagery type name
+    const assetMapping = {
+        'BENITO-2018 - 2019-Glacier Area': 2424680, // Example ID for Benito, 2018-2019, Glacier Area
+        'STEFFEN-2022 - 2023-Glacier Area': 2426382, 
+        'BENITO-2022 - 2023-Glacier Area': 2427454,
+        'BENITO-2018 - 2019-LST': 2450779, // Example ID for  LST
+        'BENITO-2018 - 2019-Air Temperature': 2450824, // Example ID for AIR TEMPRATURE
+        // Add more mappings for other combinations here
+    };
+    return assetMapping[`${name}-${year}-${imageryType}`];
+}
+
+
+
+    function resetLastSelectedEntityAppearance() {
+        if (lastSelectedEntity) {
+            lastSelectedEntity.polygon.material = Cesium.Color.BLACK.withAlpha(0.0);
+        }
+    }
+
+    function appendCheckboxToPanels(layerKey) {
+        appendCheckboxToPanel(layerKey, layerControls1, Cesium.SplitDirection.LEFT);
+        appendCheckboxToPanel(layerKey, layerControls3, Cesium.SplitDirection.RIGHT);
+    }
+
+    // Global flags to track if the legends have already been shown
+    let glacierAreaLegendShown = false;
+    let lstLegendShown = false; // New flag for LST legend
+    let airLegendShown = false;
+
+    function updateUIOnImageryAddition(selectedImageryType) {
+        // Check for "Glacier Area" imagery and display its legend if not already shown
+        if (selectedImageryType === "Glacier Area" && !glacierAreaLegendShown) {
+            document.getElementById('legend').style.display = 'block';
+            glacierAreaLegendShown = true;
+        }
+        // Check for "LST" imagery and display its legend if not already shown
+        if (selectedImageryType === "LST" && !lstLegendShown) {
+            document.getElementById('legend-LST').style.display = 'block';
+            lstLegendShown = true;
+        }
+
+            // Check for "AIR" imagery and display its legend if not already shown
+        else if (selectedImageryType === "Air Temperature" && !airLegendShown) {
+            document.getElementById('legend-AIR').style.display = 'block';
+            airLegendShown = true;
+        }
+    }
+
+    
+    // Sets to keep track of which layers are controlled by each panel
+    let layersControlledByPanel1 = new Set();
+    let layersControlledByPanel2 = new Set();
+
+    /********************************************************************************
+     * Function to Append a Checkbox to a Specified Panel
+     * - This function creates and appends a checkbox and a transparency slider for a given imagery layer to a specified UI panel.
+     * - It also sets up event handlers to manage the visibility and transparency of the imagery layer based on user interaction.
+     * @param {string} layerKey - The key identifying the layer.
+     * @param {HTMLElement} panel - The panel where the checkbox and slider will be appended.
+     * @param {Cesium.SplitDirection} splitDirection - Split direction used for setting up the imagery layer (not used in this function, but can be extended for future use).
+     ********************************************************************************/
+
+    function appendCheckboxToPanel(layerKey, panel, splitDirection) {
+        // Create a safe key for the layer to use in DOM elements (removing special characters and spaces)
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_');
+
+        // Create a label element to group the checkbox and slider
+        var label = document.createElement('label');
+        label.id = safeLayerKey + 'Label';
+
+        // Create and configure the layer toggle checkbox
+        var layerToggleCheckbox = document.createElement('input');
+        layerToggleCheckbox.type = 'checkbox';
+        layerToggleCheckbox.checked = true; // Default the checkbox to checked
+        layerToggleCheckbox.id = safeLayerKey + 'Checkbox';
+
+        // Create and configure the transparency slider for the layer
+        var transparencySlider = document.createElement('input');
+        transparencySlider.type = 'range';
+        transparencySlider.min = 0;
+        transparencySlider.max = 1;
+        transparencySlider.step = 0.1;
+        transparencySlider.value = addedImageryLayers[layerKey] ? addedImageryLayers[layerKey].alpha : 0.5; // Set initial slider value
+        transparencySlider.id = safeLayerKey + 'Slider';
+
+        // Event handler for checkbox change
+        layerToggleCheckbox.onchange = function() {
+            if (addedImageryLayers[layerKey]) {
+                addedImageryLayers[layerKey].show = this.checked; // Toggle layer visibility
+                syncCheckboxState(layerKey, this.checked, panel);  // Sync checkbox state across panels
+                updateLayerVisibility(); // Additional function to update layer visibility (if exists)
+            }
+        };
+
+        // Event handler for slider input
+        transparencySlider.oninput = function() {
+            if (addedImageryLayers[layerKey]) {
+                addedImageryLayers[layerKey].alpha = parseFloat(this.value); // Adjust layer transparency
+                syncSliderState(layerKey, this.value, panel);  // Sync slider state across panels
+            }
+        };
+
+        // Append the created elements to the label and then to the panel
+        label.appendChild(layerToggleCheckbox);
+        label.appendChild(document.createTextNode(layerKey)); // Adding the layer key as text next to the checkbox
+        label.appendChild(transparencySlider);
+        // Insert the new label at the beginning of the panel
+        if (panel.firstChild) {
+            panel.insertBefore(label, panel.firstChild);
+        } else {
+            panel.appendChild(label);
+        }
+
+        // Uncheck the checkbox in the second panel by default if swipe is enabled
+        if (isSwipeEnabled && panel.id === 'layerscontrol2-dropdown') {
+            layerToggleCheckbox.checked = false;
+        }
+    }
+    
+
+    /********************************************************************************
+     * Function to Synchronize Slider State Between Panels
+     * - This function ensures that the transparency sliders for a specific layer
+     *   in different control panels are synchronized.
+     * - When the slider value is changed in one panel, it updates the corresponding
+     *   slider in the other panel to reflect the same value.
+     * - This keeps the UI consistent and intuitive for the user.
+     * @param {string} layerKey - The key identifying the layer for which the sliders are synchronized.
+     * @param {number} value - The new value of the slider (transparency level).
+     * @param {HTMLElement} currentPanel - The panel where the slider value was changed.
+     ********************************************************************************/
+
+    function syncSliderState(layerKey, value, currentPanel) {
+        // Create a safe version of the layer key for use in DOM element IDs
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        // Query for the corresponding sliders in both control panels
+        var slider1 = document.querySelector(`#layerControls #${safeLayerKey}Slider`);
+        var slider2 = document.querySelector(`#layerscontrol2-dropdown #${safeLayerKey}Slider`);
+
+        // Synchronize the slider value in the other panel
+        if (currentPanel === layerControls1 && slider2) {
+            slider2.value = value; // Update slider in the second panel if the change was made in the first panel
+        } else if (currentPanel === layerControls3 && slider1) {
+            slider1.value = value; // Update slider in the first panel if the change was made in the second panel
+        }
+    }
+
+
+    /********************************************************************************
+     * Function to Synchronize Checkbox State Between Panels
+     * - This function ensures that the state of checkboxes (checked/unchecked) for a specific layer
+     *   is synchronized between different control panels.
+     * - When a checkbox is toggled in one panel, it updates the corresponding checkbox in the other panel.
+     * - This synchronization is essential for maintaining consistency in the user interface, ensuring that
+     *   the state of a layer's visibility is accurately represented in all control panels.
+     * @param {string} layerKey - The key identifying the layer for which the checkboxes are synchronized.
+     * @param {boolean} isChecked - The current checked state of the checkbox.
+     * @param {HTMLElement} currentPanel - The panel where the checkbox state was changed.
+     ********************************************************************************/
+    function syncCheckboxState(layerKey, isChecked, currentPanel) {
+        // Create a safe version of the layer key for use in DOM element IDs
+        var safeLayerKey = layerKey.replace(/[^a-zA-Z0-9]/g, '_'); 
+
+        // Query for the corresponding checkboxes in both control panels
+        var checkbox1 = document.querySelector(`#layerControls #${safeLayerKey}Checkbox`);
+        var checkbox2 = document.querySelector(`#layerscontrol2-dropdown #${safeLayerKey}Checkbox`);
+
+        // Synchronize the checkbox state in the other panel
+        if (currentPanel === layerControls1 && checkbox2) {
+            checkbox2.checked = !isChecked; // Invert the checked state in the second panel if the change was made in the first panel
+        } else if (currentPanel === layerControls3 && checkbox1) {
+            checkbox1.checked = !isChecked; // Invert the checked state in the first panel if the change was made in the second panel
+        }
+    }
+
+    /********************************************************************************
+     * Event Listener for Toggling the Visibility of the Initial GeoJSON Layer
+     * - This event listener is attached to a checkbox (or similar control) identified by the ID 'InitialGeoJSON'.
+     * - It manages the visibility of the GeoJSON layer in the Cesium viewer.
+     * - When the state of the checkbox changes (checked/unchecked), this event listener updates the 
+     *   visibility of the GeoJSON layer accordingly.
+     * - It ensures that the display of the GeoJSON layer on the map can be controlled interactively by the user.
+     ********************************************************************************/
+    document.querySelector('#InitialGeoJSON').addEventListener('change', function() {
+        // Check if the GeoJSON data source is available
+        if (geoJsonDataSource) {
+            // Toggle the visibility of the GeoJSON layer based on the checkbox's state
+            geoJsonDataSource.show = this.checked;
+        }
+    });
+
+
+    /********************************************************************************
+     * Swipe Functionality Variables
+     ********************************************************************************/
+    let isSwipeEnabled = false; // Flag to track if swipe is enabled
+    let swipeElement;           // DOM element for the swipe control
+
+    /********************************************************************************
+     * Function to Initialize Swipe Functionality
+     * - Creates a swipe element that allows users to interactively control the split view in the Cesium viewer.
+     * - Ensures that the swipe element is only created once and avoids re-creation if it already exists.
+     ********************************************************************************/
+     function initializeSwipe() {
+        // Check if swipeElement already exists to prevent re-initialization
+        if (swipeElement) {
+            return; // Exit the function if swipe is already initialized
+        }
+
+        // Create a new div element for the swipe functionality
+        swipeElement = document.createElement('div');
+        swipeElement.style.position = 'absolute';
+        swipeElement.style.left = (lastSwipePosition * 100) + '%';
+        viewer.scene.splitPosition = lastSwipePosition;
+        swipeElement.style.top = '0';
+        swipeElement.style.bottom = '0';
+        swipeElement.style.width = '5px'; // Width of the swipe bar
+        swipeElement.style.backgroundColor = '#d3d3d3'; // Color of the swipe bar
+        swipeElement.style.cursor = 'ew-resize'; // Cursor indicates resizable element
+        swipeElement.style.zIndex = '999'; // Ensure it appears above other viewer elements
+        
+        // Create handle element
+        var handle = document.createElement('div');
+        handle.style.position = 'absolute';
+        handle.style.top = '50%';
+        handle.style.left = '-10px'; // Half the width of the handle
+        handle.style.width = '20px'; // Width of the handle
+        handle.style.height = '20px'; // Height of the handle
+        handle.style.backgroundColor = '#d3d3d3'; // Color of the handle
+        handle.style.border = '2px solid black'; // Border to make the handle stand out
+        handle.style.borderRadius = '0px'; // Rounded corners for the handle
+        handle.style.cursor = 'ew-resize';
+        handle.style.transform = 'translateY(-50%)'; // Center the handle vertically
+
+        swipeElement.appendChild(handle); // Add the handle to the swipe bar
+        document.body.appendChild(swipeElement); // Add the swipe element to the body
+
+        // Initialize variable to track the dragging state
+        let isDragging = false;
+
+        // Event listener for starting the drag
+        swipeElement.addEventListener('mousedown', function(e) {
+            isDragging = true; // Enable dragging
+            e.preventDefault(); // Prevent default behavior to enable smooth dragging
+        });
+
+        // Event listener for dragging the swipe element
+        window.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                // Calculate the new position based on the cursor's position
+                let viewerRect = viewer.container.getBoundingClientRect();
+                let position = (e.clientX - viewerRect.left) / viewerRect.width;
+                swipeElement.style.left = (position * 100) + '%'; // Update the position of the swipe bar
+                viewer.scene.splitPosition = position; // Update the split position in the Cesium viewer
+                lastSwipePosition = position;
+            }
+        });
+
+        // Event listener for releasing the drag
+        window.addEventListener('mouseup', function() {
+            isDragging = false; // Disable dragging
+        });
+    }
+
+
+
+    /********************************************************************************
+     * Function to Update Layer Visibility
+     * - Adjusts the visibility and split direction of layers based on the state of the checkboxes in both control panels.
+     * - Handles both the GeoJSON layer and other imagery layers.
+     ********************************************************************************/
+    function updateLayerVisibility() {
+        // Update GeoJSON Layer Visibility
+        if (geoJsonDataSource) {
+            const geoJsonCheckbox1 = document.querySelector('#layerControls #InitialGeoJSON');
+            const geoJsonCheckbox2 = document.querySelector('#layerscontrol2-dropdown #InitialGeoJSON');
+
+            // Check if swipe is enabled and set visibility accordingly
+            if (isSwipeEnabled) {
+                // If swipe is enabled, the GeoJSON layer is visible if either of the checkboxes is checked
+                geoJsonDataSource.show = geoJsonCheckbox1.checked || geoJsonCheckbox2.checked;
+            } else {
+                // If swipe is not enabled, the GeoJSON layer visibility depends only on the first checkbox
+                geoJsonDataSource.show = geoJsonCheckbox1.checked;
+            }
+        }
+
+        // Update Imagery Layers Visibility
+        Object.keys(addedImageryLayers).forEach(layerKey => {
+            const layer = addedImageryLayers[layerKey];
+            const checkbox1 = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+            const checkbox2 = document.querySelector(`#layerscontrol2-dropdown #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`);
+
+            if (layer) {
+                // Check if swipe is enabled and set visibility and split direction accordingly
+                if (isSwipeEnabled) {
+                    // If swipe is enabled, the layer is visible if either of the checkboxes is checked
+                    layer.show = checkbox1.checked || checkbox2.checked;
+
+                    // Set the split direction based on which checkbox is checked
+                    if (checkbox1.checked) {
+                        layer.splitDirection = Cesium.SplitDirection.LEFT;
+                    } else {
+                        layer.splitDirection = Cesium.SplitDirection.RIGHT;
+                    }
+                } else {
+                    // If swipe is not enabled, the layer visibility depends only on the first checkbox
+                    layer.show = checkbox1.checked;
+                    layer.splitDirection = Cesium.SplitDirection.NONE; // No split direction when swipe is disabled
+                }
+            }
+        });
+    }
+
+
+    let lastSwipePosition = 0.5; // Default to the middle, update as needed
+
+
+    /********************************************************************************
+     * Event Listener for Toggle-Swipe Button
+     * - Toggles the swipe functionality on and off.
+     * - Changes the appearance of the button based on the state of the swipe.
+     * - Manages the display of the second layer control panel and resets layers when swipe is disabled.
+     ********************************************************************************/
+
+     // Global variable to store the state of checkboxes in the second panel
+    let layerVisibilityState = {};
+
+    // Function to store the state of all checkboxes in a given panel
+    function storeCheckboxStates(panelId) {
+        const checkboxes = document.querySelectorAll(`#${panelId} input[type="checkbox"]`);
+        checkboxes.forEach(checkbox => {
+            layerVisibilityState[checkbox.id] = checkbox.checked;
+        });
+    }
+
+    // Function to restore the state of all checkboxes in a given panel
+    function restoreCheckboxStates(panelId) {
+        const checkboxes = document.querySelectorAll(`#${panelId} input[type="checkbox"]`);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = layerVisibilityState[checkbox.id] || false; // Restore state or default to false
+            initialGeoJSONCheckbox2.checked = initialGeoJSONCheckbox1.checked
+        });
+    }
+
+     document.getElementById('toggle-swipe').addEventListener('click', function() {
+    // Toggle the swipe state
+    isSwipeEnabled = !isSwipeEnabled;
+
+    // Change the button color based on the swipe state
+    if (isSwipeEnabled) {
+        this.style.backgroundColor = 'green';
+
+        // Restore the checkbox states for the second panel when enabling swipe
+        restoreCheckboxStates('layerscontrol2-dropdown');
+
+        // Initialize swipe or show the second panel
+        initializeSwipe();
+        document.getElementById('layerControls2').style.display = 'block';
+        document.getElementById('layers-container').style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+        document.getElementById('layers-container').style.right = '250px';
+        document.querySelector('#layerControls2 .dropbtn').textContent = "Right Side";
+        document.querySelectorAll('.dropbtn')[0].textContent = "Left Side";
+
+
+    } else {
+        this.style.backgroundColor = '';
+        document.getElementById('layers-container').style.gridTemplateColumns = 'repeat(1, minmax(0, 1fr))'
+        document.querySelectorAll('.dropbtn')[0].textContent = "Layers";
+        // Store the checkbox states for the second panel before disabling swipe
+        storeCheckboxStates('layerscontrol2-dropdown');
+        document.getElementById('layers-container').style.right = '300px';
+        
+    }
+
+        // Reference to the second layer control panel
+        var layerControls2Panel = document.getElementById('layerControls2');
+
+        // Initialize swipe or reset layers based on the swipe state
+        if (isSwipeEnabled) {
+            initializeSwipe();
+            layerControls2Panel.style.display = 'block';
+        } else {
+            if (swipeElement && swipeElement.parentNode) {
+                lastSwipePosition = viewer.scene.splitPosition; // Store the last swipe position
+                swipeElement.parentNode.removeChild(swipeElement); // Remove the swipe element
+                swipeElement = null;
+            }
+            layerControls2Panel.style.display = 'none';
+            resetLayersToNormal();
+        }
+
+        // Update the visibility of all layers
+        updateLayerVisibility();
+        
+    });
+
+    
+    
+    /********************************************************************************
+     * Function to Uncheck and Hide Right Panel Layers
+     * - Unchecks all checkboxes in the second layer control panel, except for a specific checkbox (e.g., 'InitialGeoJSON').
+     ********************************************************************************/
+    function uncheckAndHideRightPanelLayers() {
+        const checkboxes = document.querySelectorAll('#layerscontrol2-dropdown input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.id !== "InitialGeoJSON") {
+                checkbox.checked = false;
+            }
+        });
+    }
+
+    /********************************************************************************
+     * Function to Reset Layers to Normal State
+     * - Resets the GeoJSON layer and imagery layers to their normal visibility and split direction.
+     * - This is used when the swipe functionality is turned off.
+     ********************************************************************************/
+    function resetLayersToNormal() {
+        // Reset the GeoJSON layer visibility
+        if (geoJsonDataSource) {
+            geoJsonDataSource.show = document.querySelector('#layerControls #InitialGeoJSON').checked;
+        }
+
+        // Reset the visibility and split direction of imagery layers
+        Object.keys(addedImageryLayers).forEach(layerKey => {
+            const layer = addedImageryLayers[layerKey];
+            if (layer) {
+                layer.splitDirection = Cesium.SplitDirection.NONE;
+                layer.show = document.querySelector(`#layerControls #${layerKey.replace(/[^a-zA-Z0-9]/g, '_')}Checkbox`).checked;
+            }
+        });
+
+        // Update the visibility of all layers
+        updateLayerVisibility();
+    }
+
+
+    /**
+     * Function to Close the Splash Screen and Fly to the GeoJSON Data Source
+     * - Hides the splash screen when called.
+     * - If it's the initial time closing the splash screen, it triggers a 'fly-to' animation to the GeoJSON data source in the viewer.
+     * - Ensures that the 'fly-to' animation only occurs the first time the splash screen is closed.
+     */
+    function closeSplashAndFlyTo() {
+        // Hide the splash screen
+        document.getElementById('splashScreen').style.display = 'none';
+        document.getElementById('splashScreen2').style.display = 'none';
+        document.getElementById('splashScreen3').style.display = 'none';
+        document.getElementById('splashScreen4').style.display = 'none';
+        document.getElementById('splashScreen5').style.display = 'none';
+
+        // Fly to the GeoJSON data source only on the initial closing of the splash screen
+        if (!initialSplashScreenClosed) {
+            viewer.flyTo(geoJsonDataSource);
+            initialSplashScreenClosed = true; // Mark that the initial splash screen has been closed
+        }
+    }
+
+    // Attach the closeSplashAndFlyTo function to the close button on the splash screen
+    document.getElementById('splashScreen').querySelector('button').onclick = closeSplashAndFlyTo;
+    document.getElementById('getstarted2').onclick = closeSplashAndFlyTo;
+    document.getElementById('getstarted3').onclick = closeSplashAndFlyTo;
+    document.getElementById('getstarted4').onclick = closeSplashAndFlyTo;
+    document.getElementById('getstarted5').onclick = closeSplashAndFlyTo;
+
+    /**
+     * Event Listener for the Navigation Help Button
+     * - Toggles the display of the splash screen when the navigation help button is clicked.
+     * - This provides an easy way for users to access the splash screen and navigation instructions at any time.
+     */
+    document.querySelector('.cesium-navigation-help-button').addEventListener('click', function() {
+        let splashScreen = document.getElementById('splashScreen');
+        if (splashScreen) {
+            // Check if the splash screen is currently hidden
+            if (splashScreen.style.display === 'none') {
+                // If hidden, show the splash screen
+                splashScreen.style.display = 'block';
+            } else {
+                // If shown, hide the splash screen
+                splashScreen.style.display = 'none';
+            }
+        }
+    });
+
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function(e) {
+    // Prevent the default home command
+    e.cancel = true;
+
+    // Fly to the geoJsonDataSource instead
+    viewer.flyTo(geoJsonDataSource, {
+        duration: 2.0  // Duration in seconds
+    });
+});
+
+
+//Zoom listener
+viewer.camera.moveEnd.addEventListener(function() { 
+   // the camera stopped moving
+   updateDistanceScale();
+});
+
+function updateDistanceScale() {
+    var geodesic = new Cesium.EllipsoidGeodesic();
+    var distances = [
+        1, 2, 3, 5,
+        10, 20, 30, 50,
+        100, 200, 300, 500,
+        1000, 2000, 3000, 5000,
+        10000, 20000, 30000, 50000,
+        100000, 200000, 300000, 500000,
+        1000000, 2000000, 3000000, 5000000,
+        10000000, 20000000, 30000000, 50000000
+    ];
+
+    var width = viewer.scene.canvas.clientWidth;
+    var height = viewer.scene.canvas.clientHeight;
+
+    var left = viewer.scene.camera.getPickRay(new Cesium.Cartesian2((width / 2) | 0, height - 1));
+    var right = viewer.scene.camera.getPickRay(new Cesium.Cartesian2(1 + (width / 2) | 0, height - 1));
+
+    var globe = viewer.scene.globe;
+    var leftPosition = globe.pick(left, viewer.scene);
+    var rightPosition = globe.pick(right, viewer.scene);
+
+    if (typeof leftPosition == "undefined" || typeof rightPosition == "undefined") {
+        $("#scalebartag").text("Distance Scale");
+        return;
+    }
+
+    var leftCartographic = globe.ellipsoid.cartesianToCartographic(leftPosition);
+    var rightCartographic = globe.ellipsoid.cartesianToCartographic(rightPosition);
+
+    geodesic.setEndPoints(leftCartographic, rightCartographic);
+    var pixelDistance = geodesic.surfaceDistance; // This is now in meters
+    
+    var maxBarWidth = 100;
+    var distance;
+    var label;
+    var units;
+
+    for (var i = distances.length - 1; i >= 0; --i) {
+        if (distances[i] / pixelDistance < maxBarWidth) {
+            if (distances[i] >= 1000) { // Now checking for greater than or equal to 1000 meters
+                distance = distances[i] / 1000; // Convert to kilometers
+                units = " km";
+            } else {
+                distance = distances[i]/1000; // Use meters
+                units = " km";
+            }
+            break; // Exit the loop once the suitable distance is found
+        }
+    }
+
+    if (typeof distance !== "undefined") {
+        label = distance.toString() + units;
+
+        // Calculate the width of the scale bar based on the distance
+        var scaleBarWidth = (distance / pixelDistance) * (width / 2);
+        document.getElementById("scalebar").style.width = scaleBarWidth.toString() + "px";
+        console.log("scalebarwidth",scaleBarWidth, "distance",distance, "pixeldisntace", pixelDistance, "width", width)
+        
+        $("#scalebartag").text(label);
+    } else {
+        document.getElementById("scalebar").style.width = "10px";
+        $("#scalebartag").text("undefined");
+    }
+}
+
+
+
+
+  </script>
+</body>
+</html>
