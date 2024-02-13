@@ -1006,21 +1006,7 @@ html, body {
             <!-- Options will be dynamically added here -->
         </select>
     </div>
-    
-        <!-- Toolbar for Year Selection -->
-    <div id="toolbar-year">
-        <select class="cesium-button" id="dropdow-year">
-            <option disabled selected>SELECT PERIOD</option>
-            <option value="0">2018 - 2019</option>
-            <option value="1">2019 - 2020</option>
-            <option value="2">2020 - 2021</option>
-            <option value="3">2021 - 2022</option>
-            <option value="4">2022 - 2023</option>
-            <option value="4">2023 - 2024</option>
-        </select>
-    </div>
-    
-       
+         
     <!-- Toolbar for Imagery Selection -->
     <div id="toolbar-imagery">
         <select class="cesium-button" id="dropdow-imagery">
@@ -1030,6 +1016,20 @@ html, body {
             <option value="2">Air Temperature</option>
         </select>
     </div>
+
+        <!-- Toolbar for Year Selection -->
+        <div id="toolbar-year">
+            <select class="cesium-button" id="dropdow-year">
+                <option disabled selected>SELECT PERIOD</option>
+                <option value="0">2018 - 2019</option>
+                <option value="1">2019 - 2020</option>
+                <option value="2">2020 - 2021</option>
+                <option value="3">2021 - 2022</option>
+                <option value="4">2022 - 2023</option>
+                <option value="4">2023 - 2024</option>
+            </select>
+        </div>
+        
     
         <!-- Button to Add Imagery -->
         <button id="toggle-imagery">Submit</button>
@@ -1123,20 +1123,20 @@ html, body {
                 <span>Select the glacier you are interested in from the dropdown menu.</span>
             </div>
             <div class="instruction-item">
-                <p id="SelectPeriod-instructions-button" 
-                    onmouseover="document.getElementById('dropdow-year').style.backgroundColor='#5586b7', document.getElementById('dropdow-year').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
-                    onmouseout="document.getElementById('dropdow-year').style.backgroundColor=''; document.getElementById('dropdow-year').style.boxShadow='';">
-                    SELECT PERIOD
-                </p>
-                <span>Choose the time period for which you want to view the glacier data.</span>
-            </div>
-            <div class="instruction-item">
                 <p id="SelectImagery-instructions-button" 
                     onmouseover="document.getElementById('dropdow-imagery').style.backgroundColor='#5586b7', document.getElementById('dropdow-imagery').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
                     onmouseout="document.getElementById('dropdow-imagery').style.backgroundColor=''; document.getElementById('dropdow-imagery').style.boxShadow='';">
                     SELECT IMAGERY TYPE
                 </p>
                 <span>Decide on the type of imagery to be displayed for the selected glacier.</span>
+            </div>
+            <div class="instruction-item">
+                <p id="SelectPeriod-instructions-button" 
+                    onmouseover="document.getElementById('dropdow-year').style.backgroundColor='#5586b7', document.getElementById('dropdow-year').style.boxShadow='0 0 2px 2px rgba(237, 255, 255, 0.7)';" 
+                    onmouseout="document.getElementById('dropdow-year').style.backgroundColor=''; document.getElementById('dropdow-year').style.boxShadow='';">
+                    SELECT PERIOD
+                </p>
+                <span>Choose the time period for which you want to view the glacier data.</span>
             </div>
             <div class="instruction-item">
                 <p id="ToggleImagery-instructions-button" 
